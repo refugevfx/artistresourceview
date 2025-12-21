@@ -1,104 +1,102 @@
 import { Shot } from '@/types/project';
 import { getOrangeShots, getRedShots, getShotsMissingFinalDate, getBidShotsWithTime } from '@/data/mockProjectData';
-import { cn } from '@/lib/utils';
-import { AlertTriangle, Circle, Calendar, DollarSign } from 'lucide-react';
+import { Circle, Calendar, DollarSign } from 'lucide-react';
 
 interface BudgetWarningsProps {
   shots: Shot[];
 }
 
+// Group shots by episode/sequence
+const groupByEpisode = (shots: { code: string; [key: string]: any }[]) => {
+  const groups: Record<string, number> = {};
+  shots.forEach(shot => {
+    const episode = shot.code.split('_')[0]; // e.g., "SQ01"
+    groups[episode] = (groups[episode] || 0) + 1;
+  });
+  return Object.entries(groups).sort((a, b) => b[1] - a[1]); // Sort by count desc
+};
+
 export const BudgetWarnings = ({ shots }: BudgetWarningsProps) => {
   const redShots = getRedShots(shots);
   const orangeShots = getOrangeShots(shots).filter(
-    s => !redShots.some(r => r.id === s.id) // Exclude already red shots
+    s => !redShots.some(r => r.id === s.id)
   );
   const missingFinal = getShotsMissingFinalDate(shots);
   const bidWithTime = getBidShotsWithTime(shots);
 
-  const totalIssues = redShots.length + orangeShots.length + missingFinal.length + bidWithTime.length;
+  const redByEpisode = groupByEpisode(redShots);
+  const orangeByEpisode = groupByEpisode(orangeShots);
 
-  if (totalIssues === 0) {
+  const hasWarnings = redShots.length > 0 || orangeShots.length > 0;
+
+  if (!hasWarnings && missingFinal.length === 0) {
     return (
       <div className="flex items-center justify-center py-3 text-success">
         <div className="text-center">
-          <div className="text-lg mb-0.5">✓</div>
-          <p className="text-xs">All clear</p>
+          <div className="text-sm mb-0.5">✓</div>
+          <p className="text-[10px]">All clear</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2 text-xs">
-      {/* Red Shots - Total over budget */}
-      {redShots.length > 0 && (
+    <div className="space-y-2 text-[11px]">
+      {/* Red Shots by Episode */}
+      {redByEpisode.length > 0 && (
         <div className="space-y-1">
-          <div className="flex items-center gap-1.5 text-destructive font-medium">
-            <Circle className="w-2.5 h-2.5 fill-destructive" />
-            Red Shots ({redShots.length})
+          <div className="flex items-center gap-1.5 text-destructive">
+            <Circle className="w-2 h-2 fill-current" />
+            <span className="font-medium">Red</span>
+            <span className="text-muted-foreground">({redShots.length})</span>
           </div>
           <div className="flex flex-wrap gap-1">
-            {redShots.slice(0, 4).map((shot) => (
+            {redByEpisode.map(([episode, count]) => (
               <span 
-                key={shot.id}
-                className="px-1.5 py-0.5 rounded bg-destructive/15 text-destructive font-mono text-[10px]"
-                title={`${shot.totalLogged}h / ${shot.totalBid}h (+${shot.overagePercent}%)`}
+                key={episode}
+                className="px-1.5 py-0.5 rounded bg-destructive/10 text-destructive font-mono text-[10px]"
               >
-                {shot.code.split('_')[1]} +{shot.overagePercent}%
+                {episode} · {count}
               </span>
             ))}
-            {redShots.length > 4 && (
-              <span className="px-1.5 py-0.5 text-destructive text-[10px]">
-                +{redShots.length - 4} more
-              </span>
-            )}
           </div>
         </div>
       )}
 
-      {/* Orange Shots - Task over bid */}
-      {orangeShots.length > 0 && (
+      {/* Orange Shots by Episode */}
+      {orangeByEpisode.length > 0 && (
         <div className="space-y-1">
-          <div className="flex items-center gap-1.5 text-warning font-medium">
-            <Circle className="w-2.5 h-2.5 fill-warning" />
-            Orange Shots ({orangeShots.length})
+          <div className="flex items-center gap-1.5 text-warning">
+            <Circle className="w-2 h-2 fill-current" />
+            <span className="font-medium">Orange</span>
+            <span className="text-muted-foreground">({orangeShots.length})</span>
           </div>
           <div className="flex flex-wrap gap-1">
-            {orangeShots.slice(0, 4).map((shot) => (
+            {orangeByEpisode.map(([episode, count]) => (
               <span 
-                key={shot.id}
-                className="px-1.5 py-0.5 rounded bg-warning/15 text-warning font-mono text-[10px]"
-                title={`${shot.overTaskCount} task(s) over bid`}
+                key={episode}
+                className="px-1.5 py-0.5 rounded bg-warning/10 text-warning font-mono text-[10px]"
               >
-                {shot.code.split('_')[1]}
+                {episode} · {count}
               </span>
             ))}
-            {orangeShots.length > 4 && (
-              <span className="px-1.5 py-0.5 text-warning text-[10px]">
-                +{orangeShots.length - 4} more
-              </span>
-            )}
           </div>
         </div>
       )}
 
       {/* Missing Final Date */}
       {missingFinal.length > 0 && (
-        <div className="flex items-center gap-1.5 p-1.5 rounded bg-muted/50 border border-border">
-          <Calendar className="w-3 h-3 text-muted-foreground" />
-          <span className="text-muted-foreground">
-            {missingFinal.length} final shot{missingFinal.length !== 1 ? 's' : ''} missing date
-          </span>
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <Calendar className="w-3 h-3" />
+          <span>{missingFinal.length} final missing date</span>
         </div>
       )}
 
       {/* Bid shots with logged time */}
       {bidWithTime.length > 0 && (
-        <div className="flex items-center gap-1.5 p-1.5 rounded bg-primary/10 border border-primary/20">
-          <DollarSign className="w-3 h-3 text-primary" />
-          <span className="text-primary">
-            {bidWithTime.length} unawarded shot{bidWithTime.length !== 1 ? 's' : ''} with logged time
-          </span>
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <DollarSign className="w-3 h-3" />
+          <span>{bidWithTime.length} unawarded with time</span>
         </div>
       )}
     </div>

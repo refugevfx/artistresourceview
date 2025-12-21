@@ -1,6 +1,6 @@
 import { Artist } from '@/types/project';
 import { cn } from '@/lib/utils';
-import { User, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface ArtistWorkloadProps {
   artists: Artist[];
@@ -13,138 +13,130 @@ export const ArtistWorkload = ({ artists, compact = false }: ArtistWorkloadProps
       ? Math.round((artist.totalLoggedHours / artist.totalBidHours) * 100)
       : 100;
     return { ...artist, efficiency };
-  }).sort((a, b) => b.efficiency - a.efficiency);
+  }).sort((a, b) => a.efficiency - b.efficiency); // Sort by efficiency ascending (best first)
 
-  const topPerformers = sortedArtists.filter(a => a.efficiency <= 100 && a.completedTasks > 0).slice(0, compact ? 2 : 2);
-  const needsSupport = sortedArtists.filter(a => a.efficiency > 110).slice(0, compact ? 2 : 2);
+  const onTrack = sortedArtists.filter(a => a.efficiency <= 100 && a.completedTasks > 0);
+  const behind = sortedArtists.filter(a => a.efficiency > 110);
+
+  if (onTrack.length === 0 && behind.length === 0) {
+    return <div className="text-muted-foreground text-center py-2 text-[10px]">No data</div>;
+  }
 
   if (compact) {
     return (
-      <div className="space-y-1.5 text-[10px]">
+      <div className="space-y-2 text-[11px]">
         {/* On Track */}
-        {topPerformers.length > 0 && (
+        {onTrack.length > 0 && (
           <div className="space-y-1">
-            <div className="flex items-center gap-1 text-success uppercase font-medium">
-              <CheckCircle2 className="w-2.5 h-2.5" />
-              On Track
+            <div className="flex items-center gap-1.5 text-success">
+              <CheckCircle2 className="w-3 h-3" />
+              <span className="font-medium">On Track</span>
+              <span className="text-muted-foreground">({onTrack.length})</span>
             </div>
-            {topPerformers.map((artist) => (
-              <div key={artist.id} className="flex items-center justify-between px-1.5 py-1 rounded bg-success/5 border border-success/20">
-                <span className="text-foreground truncate">{artist.name}</span>
-                <span className="font-mono text-success">{artist.efficiency}%</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* May need support */}
-        {needsSupport.length > 0 && (
-          <div className="space-y-1">
-            <div className="flex items-center gap-1 text-muted-foreground uppercase font-medium">
-              <TrendingUp className="w-2.5 h-2.5" />
-              May Need Support
-            </div>
-            {needsSupport.map((artist) => (
-              <div 
-                key={artist.id} 
-                className={cn(
-                  'flex items-center justify-between px-1.5 py-1 rounded border',
-                  artist.efficiency > 150 ? 'bg-warning/5 border-warning/20' : 'bg-primary/5 border-primary/20'
-                )}
-              >
-                <span className="text-foreground truncate">{artist.name}</span>
-                <span className={cn('font-mono', artist.efficiency > 150 ? 'text-warning' : 'text-primary')}>
-                  {artist.efficiency}%
+            <div className="flex flex-wrap gap-1">
+              {onTrack.slice(0, 4).map((artist) => (
+                <span 
+                  key={artist.id}
+                  className="px-1.5 py-0.5 rounded bg-success/10 text-success font-mono text-[10px]"
+                >
+                  {artist.name.split(' ')[0]} {artist.efficiency}%
                 </span>
-              </div>
-            ))}
+              ))}
+              {onTrack.length > 4 && (
+                <span className="px-1.5 py-0.5 text-muted-foreground text-[10px]">
+                  +{onTrack.length - 4}
+                </span>
+              )}
+            </div>
           </div>
         )}
 
-        {topPerformers.length === 0 && needsSupport.length === 0 && (
-          <div className="text-muted-foreground text-center py-2">No data</div>
+        {/* Behind */}
+        {behind.length > 0 && (
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-warning">
+              <AlertCircle className="w-3 h-3" />
+              <span className="font-medium">Behind</span>
+              <span className="text-muted-foreground">({behind.length})</span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {behind.slice(0, 4).map((artist) => (
+                <span 
+                  key={artist.id}
+                  className={cn(
+                    'px-1.5 py-0.5 rounded font-mono text-[10px]',
+                    artist.efficiency > 150 ? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning'
+                  )}
+                >
+                  {artist.name.split(' ')[0]} {artist.efficiency}%
+                </span>
+              ))}
+              {behind.length > 4 && (
+                <span className="px-1.5 py-0.5 text-muted-foreground text-[10px]">
+                  +{behind.length - 4}
+                </span>
+              )}
+            </div>
+          </div>
         )}
       </div>
     );
   }
 
+  // Full view
   return (
     <div className="space-y-3">
-      {/* Top performers */}
-      {topPerformers.length > 0 && (
+      {/* On Track */}
+      {onTrack.length > 0 && (
         <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs text-success uppercase tracking-wide">
+          <div className="flex items-center gap-1.5 text-xs text-success">
             <CheckCircle2 className="w-3 h-3" />
-            On Track
+            On Track ({onTrack.length})
           </div>
-          {topPerformers.map((artist, idx) => (
+          {onTrack.slice(0, 3).map((artist) => (
             <div 
               key={artist.id}
-              className="flex items-center gap-2 p-2 rounded-md border border-success/20 bg-success/5 slide-in"
-              style={{ animationDelay: `${idx * 50}ms` }}
+              className="flex items-center justify-between px-2 py-1.5 rounded bg-success/5 border border-success/20"
             >
-              <div className="w-7 h-7 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
-                <User className="w-4 h-4 text-success" />
+              <div>
+                <p className="text-sm font-medium text-foreground">{artist.name}</p>
+                <p className="text-[10px] text-muted-foreground">{artist.department}</p>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{artist.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {artist.completedTasks} tasks done · {artist.totalLoggedHours}h
-                </p>
-              </div>
-              <div className="text-xs font-mono text-success px-1.5 py-0.5 rounded bg-success/10">
-                {artist.efficiency}%
-              </div>
+              <span className="font-mono text-xs text-success">{artist.efficiency}%</span>
             </div>
           ))}
         </div>
       )}
 
-      {/* Needs support */}
-      {needsSupport.length > 0 && (
+      {/* Behind */}
+      {behind.length > 0 && (
         <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wide">
-            <TrendingUp className="w-3 h-3" />
-            May Need Support
+          <div className="flex items-center gap-1.5 text-xs text-warning">
+            <AlertCircle className="w-3 h-3" />
+            Behind ({behind.length})
           </div>
-          {needsSupport.map((artist, idx) => {
-            const overageLevel = artist.efficiency > 150 ? 'high' : 'medium';
-            return (
-              <div 
-                key={artist.id}
-                className={cn(
-                  'flex items-center gap-2 p-2 rounded-md border transition-all slide-in',
-                  overageLevel === 'high' ? 'border-warning/30 bg-warning/5' : 'border-primary/20 bg-primary/5'
-                )}
-                style={{ animationDelay: `${(topPerformers.length + idx) * 50}ms` }}
-              >
-                <div className={cn(
-                  'w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0',
-                  overageLevel === 'high' ? 'bg-warning/20' : 'bg-primary/20'
-                )}>
-                  <User className={cn('w-4 h-4', overageLevel === 'high' ? 'text-warning' : 'text-primary')} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{artist.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {artist.activeTasks} active · {artist.totalLoggedHours}h / {artist.totalBidHours}h
-                  </p>
-                </div>
-                <div className={cn(
-                  'text-xs font-mono px-1.5 py-0.5 rounded',
-                  overageLevel === 'high' ? 'text-warning bg-warning/10' : 'text-primary bg-primary/10'
-                )}>
-                  {artist.efficiency}%
-                </div>
+          {behind.slice(0, 3).map((artist) => (
+            <div 
+              key={artist.id}
+              className={cn(
+                'flex items-center justify-between px-2 py-1.5 rounded border',
+                artist.efficiency > 150 ? 'bg-destructive/5 border-destructive/20' : 'bg-warning/5 border-warning/20'
+              )}
+            >
+              <div>
+                <p className="text-sm font-medium text-foreground">{artist.name}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {artist.totalLoggedHours}h / {artist.totalBidHours}h
+                </p>
               </div>
-            );
-          })}
-        </div>
-      )}
-
-      {topPerformers.length === 0 && needsSupport.length === 0 && (
-        <div className="flex items-center justify-center h-full text-muted-foreground">
-          <p className="text-sm">No artist data available</p>
+              <span className={cn(
+                'font-mono text-xs',
+                artist.efficiency > 150 ? 'text-destructive' : 'text-warning'
+              )}>
+                {artist.efficiency}%
+              </span>
+            </div>
+          ))}
         </div>
       )}
     </div>
