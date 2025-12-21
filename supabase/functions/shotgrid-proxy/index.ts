@@ -64,7 +64,7 @@ serve(async (req) => {
 
     const headers = {
       'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/vnd+shotgun.api3_hash+json',
       'Accept': 'application/json',
     };
 
