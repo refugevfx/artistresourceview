@@ -32,13 +32,16 @@ interface ShotGridTask {
   attributes: {
     content: string;
     sg_status_list?: string;
-    entity?: { id: number; type: string };
-    task_assignees?: Array<{ id: number; name: string }>;
     step?: { name: string };
     est_in_mins?: number; // bid in minutes
     time_logs_sum?: number; // logged time in minutes
     start_date?: string;
     due_date?: string;
+  };
+  relationships?: {
+    entity?: { data: { id: number; type: string } };
+    task_assignees?: { data: Array<{ id: number; type: string; name?: string }> };
+    step?: { data: { id: number; type: string; name?: string } };
   };
 }
 
@@ -179,31 +182,40 @@ export const useShotGridData = () => {
       const sgTasks: ShotGridTask[] = tasksResult.data?.data || [];
       const sgArtists: ShotGridArtist[] = artistsResult.data?.data || [];
 
-      // Group tasks by shot entity ID
+      // Group tasks by shot entity ID (entity is in relationships, not attributes)
       const tasksByShotId: Record<number, ShotGridTask[]> = {};
       sgTasks.forEach((task) => {
-        const shotId = task.attributes.entity?.id;
-        if (shotId && task.attributes.entity?.type === 'Shot') {
+        const entityData = task.relationships?.entity?.data;
+        const shotId = entityData?.id;
+        if (shotId && entityData?.type === 'Shot') {
           if (!tasksByShotId[shotId]) tasksByShotId[shotId] = [];
           tasksByShotId[shotId].push(task);
         }
       });
 
+      console.log(`Tasks grouped by shot: ${Object.keys(tasksByShotId).length} shots have tasks`);
+
       // Map shots with their tasks
       const shots: Shot[] = sgShots.map((sgShot) => {
         const shotTasks = tasksByShotId[sgShot.id] || [];
         
-        const tasks: Task[] = shotTasks.map((t) => ({
-          id: String(t.id),
-          name: t.attributes.content,
-          department: t.attributes.step?.name || 'General',
-          assignee: t.attributes.task_assignees?.[0]?.name || 'Unassigned',
-          status: mapShotGridStatus(t.attributes.sg_status_list),
-          bidHours: (t.attributes.est_in_mins || 0) / 60,
-          loggedHours: (t.attributes.time_logs_sum || 0) / 60,
-          startDate: t.attributes.start_date,
-          dueDate: t.attributes.due_date || new Date().toISOString(),
-        }));
+        const tasks: Task[] = shotTasks.map((t) => {
+          // Get assignee from relationships
+          const assigneeData = t.relationships?.task_assignees?.data?.[0];
+          const assigneeName = assigneeData?.name || 'Unassigned';
+          
+          return {
+            id: String(t.id),
+            name: t.attributes.content,
+            department: t.attributes.step?.name || t.relationships?.step?.data?.name || 'General',
+            assignee: assigneeName,
+            status: mapShotGridStatus(t.attributes.sg_status_list),
+            bidHours: (t.attributes.est_in_mins || 0) / 60,
+            loggedHours: (t.attributes.time_logs_sum || 0) / 60,
+            startDate: t.attributes.start_date,
+            dueDate: t.attributes.due_date || new Date().toISOString(),
+          };
+        });
 
         return {
           id: String(sgShot.id),
@@ -254,30 +266,32 @@ export const useShotGridData = () => {
       }> = {};
 
       sgTasks.forEach((task) => {
-        const assignees = task.attributes.task_assignees || [];
+        // Get assignees from relationships
+        const assignees = task.relationships?.task_assignees?.data || [];
         const isComplete = ['fin', 'apr', 'cl_apr'].includes(
           mapShotGridStatus(task.attributes.sg_status_list)
         );
         
         assignees.forEach((assignee) => {
-          if (!artistStats[assignee.name]) {
-            artistStats[assignee.name] = {
+          const assigneeName = assignee.name || `User ${assignee.id}`;
+          if (!artistStats[assigneeName]) {
+            artistStats[assigneeName] = {
               activeTasks: 0,
               completedTasks: 0,
               bidHours: 0,
               loggedHours: 0,
-              department: task.attributes.step?.name || 'General',
+              department: task.attributes.step?.name || task.relationships?.step?.data?.name || 'General',
             };
           }
           
           if (isComplete) {
-            artistStats[assignee.name].completedTasks++;
+            artistStats[assigneeName].completedTasks++;
           } else {
-            artistStats[assignee.name].activeTasks++;
+            artistStats[assigneeName].activeTasks++;
           }
           
-          artistStats[assignee.name].bidHours += (task.attributes.est_in_mins || 0) / 60;
-          artistStats[assignee.name].loggedHours += (task.attributes.time_logs_sum || 0) / 60;
+          artistStats[assigneeName].bidHours += (task.attributes.est_in_mins || 0) / 60;
+          artistStats[assigneeName].loggedHours += (task.attributes.time_logs_sum || 0) / 60;
         });
       });
 
