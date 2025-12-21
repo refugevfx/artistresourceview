@@ -64,7 +64,9 @@ serve(async (req) => {
 
     const headers = {
       'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/vnd+shotgun.api3_hash+json',
+      // ShotGrid search endpoints require one of these vendor content-types.
+      // We are using the "Array Style" filter format in our payloads.
+      'Content-Type': 'application/vnd+shotgun.api3_array+json',
       'Accept': 'application/json',
     };
 
