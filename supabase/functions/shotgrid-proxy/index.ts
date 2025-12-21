@@ -110,7 +110,7 @@ serve(async (req) => {
             "code", "sg_status_list", "sg_shot_type", "sg_cut_duration",
             "description", "sg_sequence", "updated_at", "created_at",
             "sg_priority", "sg_notes_count", "sg_final_date", "due_date",
-            "sg_bid_status"
+            "sg_bidding_status"
           ],
           page: { size: 500 },
         };
@@ -129,6 +129,11 @@ serve(async (req) => {
 
         responseData = await shotsResponse.json();
         console.log(`Fetched ${responseData.data?.length || 0} shots`);
+        
+        // Log first shot to debug field names
+        if (responseData.data?.[0]) {
+          console.log('Sample shot attributes:', JSON.stringify(responseData.data[0].attributes));
+        }
         break;
       }
 
