@@ -32,11 +32,39 @@ export interface Task {
 
 export type ShotType = 'creative' | 'normal' | 'complex' | 'simple';
 
+// Bidding status codes from ShotGrid
+export type BiddingStatus = 
+  | 'tbb'    // To Be Bid
+  | 'bid'    // Bid
+  | 'bds'    // Bid Sent
+  | 'bda'    // Bid Awarded
+  | 'bidre'  // Rebid
+  | 'bcdt'   // Cost to Date
+  | 'poi'    // Point of Issue
+  | 'omt';   // Omit
+
+export interface BiddingStatusConfig {
+  code: BiddingStatus;
+  label: string;
+}
+
+export const BIDDING_STATUS_CONFIG: BiddingStatusConfig[] = [
+  { code: 'tbb', label: 'To Be Bid' },
+  { code: 'bid', label: 'Bid' },
+  { code: 'bds', label: 'Bid Sent' },
+  { code: 'bda', label: 'Bid Awarded' },
+  { code: 'bidre', label: 'Rebid' },
+  { code: 'bcdt', label: 'Cost to Date' },
+  { code: 'poi', label: 'Point of Issue' },
+  { code: 'omt', label: 'Omit' },
+];
+
 export interface Shot {
   id: string;
   code: string;
   status: ShotStatus;
   shotType: ShotType;
+  biddingStatus?: BiddingStatus;
   tasks: Task[];
   dueDate: string;
   finalDate?: string; // Date shot reached 'fin' status

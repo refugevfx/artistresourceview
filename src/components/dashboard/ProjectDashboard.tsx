@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { useShotGridData } from '@/hooks/useShotGridData';
 import { getRedShots, getOrangeShots } from '@/data/mockProjectData';
 import { StatusDonut } from './StatusDonut';
@@ -7,15 +8,20 @@ import { ArtistWorkload } from './ArtistWorkload';
 import { BudgetWarnings } from './BudgetWarnings';
 import { Celebrations } from './Celebrations';
 import { ShotTypeBreakdown } from './ShotTypeBreakdown';
-import { Clock, AlertTriangle, Users, Star, ChevronDown, RefreshCw, AlertCircle } from 'lucide-react';
+import { Clock, AlertTriangle, Users, Star, ChevronDown, RefreshCw, AlertCircle, Filter } from 'lucide-react';
+import { BiddingStatus, BIDDING_STATUS_CONFIG } from '@/types/project';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
 export const ProjectDashboard = () => {
+  const [selectedBiddingStatuses, setSelectedBiddingStatuses] = useState<BiddingStatus[]>(['bda']);
+  
   const {
     projects,
     selectedProjectId,
@@ -25,6 +31,31 @@ export const ProjectDashboard = () => {
     error,
     refresh,
   } = useShotGridData();
+
+  // Filter shots based on selected bidding statuses
+  const filteredShots = useMemo(() => {
+    if (!project) return [];
+    if (selectedBiddingStatuses.length === 0) return project.shots;
+    return project.shots.filter(shot => 
+      shot.biddingStatus && selectedBiddingStatuses.includes(shot.biddingStatus)
+    );
+  }, [project, selectedBiddingStatuses]);
+
+  const toggleBiddingStatus = (status: BiddingStatus) => {
+    setSelectedBiddingStatuses(prev => 
+      prev.includes(status)
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
+
+  const selectAllBiddingStatuses = () => {
+    setSelectedBiddingStatuses(BIDDING_STATUS_CONFIG.map(c => c.code));
+  };
+
+  const clearBiddingStatuses = () => {
+    setSelectedBiddingStatuses([]);
+  };
 
   if (error) {
     return (
@@ -58,39 +89,84 @@ export const ProjectDashboard = () => {
     );
   }
 
-  const redShots = getRedShots(project.shots);
-  const orangeShots = getOrangeShots(project.shots);
-  const budgetUtilization = project.totalBidHours > 0 
-    ? Math.round((project.totalLoggedHours / project.totalBidHours) * 100) 
+  const redShots = getRedShots(filteredShots);
+  const orangeShots = getOrangeShots(filteredShots);
+  
+  // Calculate budget from filtered shots
+  const totalBidHours = filteredShots.reduce((sum, shot) => 
+    sum + shot.tasks.reduce((s, t) => s + t.bidHours, 0), 0);
+  const totalLoggedHours = filteredShots.reduce((sum, shot) => 
+    sum + shot.tasks.reduce((s, t) => s + t.loggedHours, 0), 0);
+  const budgetUtilization = totalBidHours > 0 
+    ? Math.round((totalLoggedHours / totalBidHours) * 100) 
     : 0;
+
+  const getBiddingFilterLabel = () => {
+    if (selectedBiddingStatuses.length === 0) return 'All Shots';
+    if (selectedBiddingStatuses.length === 1) {
+      return BIDDING_STATUS_CONFIG.find(c => c.code === selectedBiddingStatuses[0])?.label || 'Filter';
+    }
+    return `${selectedBiddingStatuses.length} statuses`;
+  };
 
   return (
     <div className="p-4 space-y-3 max-w-2xl mx-auto font-sans">
       {/* Compact Header with Project Filter */}
       <div className="flex items-center justify-between gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-1.5 min-w-0 hover:bg-secondary rounded px-2 py-1 transition-colors -ml-2">
-            <div className="min-w-0 text-left">
-              <h1 className="text-sm font-semibold text-foreground truncate">{project.name}</h1>
-              <p className="text-[10px] text-muted-foreground truncate">{project.client}</p>
-            </div>
-            <ChevronDown className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="bg-popover border-border z-50">
-            {projects.map((p) => (
-              <DropdownMenuItem
-                key={p.id}
-                onClick={() => setSelectedProjectId(p.id)}
-                className={p.id === selectedProjectId ? 'bg-accent' : ''}
-              >
-                <div>
-                  <div className="font-medium text-sm">{p.name}</div>
-                  <div className="text-[10px] text-muted-foreground">{p.client}</div>
-                </div>
+        <div className="flex items-center gap-2 min-w-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1.5 min-w-0 hover:bg-secondary rounded px-2 py-1 transition-colors -ml-2">
+              <div className="min-w-0 text-left">
+                <h1 className="text-sm font-semibold text-foreground truncate">{project.name}</h1>
+                <p className="text-[10px] text-muted-foreground truncate">{project.client}</p>
+              </div>
+              <ChevronDown className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="bg-popover border-border z-50">
+              {projects.map((p) => (
+                <DropdownMenuItem
+                  key={p.id}
+                  onClick={() => setSelectedProjectId(p.id)}
+                  className={p.id === selectedProjectId ? 'bg-accent' : ''}
+                >
+                  <div>
+                    <div className="font-medium text-sm">{p.name}</div>
+                    <div className="text-[10px] text-muted-foreground">{p.client}</div>
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Bidding Status Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 px-2 py-1 text-[10px] bg-secondary hover:bg-accent rounded transition-colors">
+              <Filter className="w-3 h-3" />
+              <span className="font-medium">{getBiddingFilterLabel()}</span>
+              <ChevronDown className="w-2.5 h-2.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="bg-popover border-border z-50 min-w-[160px]">
+              <DropdownMenuItem onClick={selectAllBiddingStatuses} className="text-xs">
+                Select All
               </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuItem onClick={clearBiddingStatuses} className="text-xs">
+                Clear All
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {BIDDING_STATUS_CONFIG.map((config) => (
+                <DropdownMenuCheckboxItem
+                  key={config.code}
+                  checked={selectedBiddingStatuses.includes(config.code)}
+                  onCheckedChange={() => toggleBiddingStatus(config.code)}
+                  className="text-xs"
+                >
+                  {config.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        
         <div className="flex items-center gap-2">
           <button
             onClick={refresh}
@@ -109,8 +185,9 @@ export const ProjectDashboard = () => {
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Budget</span>
             <span className="font-mono text-foreground">
-              {Math.round(project.totalLoggedHours)}h / {Math.round(project.totalBidHours)}h
+              {Math.round(totalLoggedHours)}h / {Math.round(totalBidHours)}h
             </span>
+            <span className="text-muted-foreground">({filteredShots.length} shots)</span>
           </div>
           <div className="flex items-center gap-3">
             {redShots.length > 0 && (
@@ -136,14 +213,14 @@ export const ProjectDashboard = () => {
             style={{ width: `${Math.min(budgetUtilization, 100)}%` }}
           />
         </div>
-        <ShotTypeBreakdown shots={project.shots} />
+        <ShotTypeBreakdown shots={filteredShots} />
       </div>
 
       {/* Main Grid - 2x2 compact */}
       <div className="grid grid-cols-2 gap-2">
         {/* Status Overview */}
         <AlertCard title="Status" icon={Clock} compact>
-          <StatusDonut shots={project.shots} compact />
+          <StatusDonut shots={filteredShots} compact />
         </AlertCard>
 
         {/* Budget Warnings */}
@@ -153,15 +230,15 @@ export const ProjectDashboard = () => {
           variant={redShots.length > 0 ? 'danger' : orangeShots.length > 0 ? 'warning' : 'default'}
           compact
         >
-          <BudgetWarnings shots={project.shots} />
+          <BudgetWarnings shots={filteredShots} />
         </AlertCard>
 
         {/* Celebrations */}
         <AlertCard title="Wins" icon={Star} variant="success" compact>
           <Celebrations 
-            shots={project.shots}
-            clientApprovedCount={project.clientApprovedShots}
-            clientPendingCount={project.clientPendingShots}
+            shots={filteredShots}
+            clientApprovedCount={filteredShots.filter(s => s.status === 'cl_apr').length}
+            clientPendingCount={filteredShots.filter(s => ['cl_ip', 'cl_rev'].includes(s.status)).length}
             compact
           />
         </AlertCard>
