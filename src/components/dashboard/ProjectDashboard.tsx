@@ -8,7 +8,7 @@ import { ArtistWorkload } from './ArtistWorkload';
 import { BudgetWarnings } from './BudgetWarnings';
 import { Celebrations } from './Celebrations';
 import { ShotTypeBreakdown } from './ShotTypeBreakdown';
-import { Clock, AlertTriangle, Users, Star, ChevronDown, RefreshCw, AlertCircle, Filter } from 'lucide-react';
+import { Clock, AlertTriangle, Users, Star, ChevronDown, RefreshCw, AlertCircle, Filter, HelpCircle } from 'lucide-react';
 import { BiddingStatus, BIDDING_STATUS_CONFIG } from '@/types/project';
 import {
   DropdownMenu,
@@ -18,6 +18,11 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export const ProjectDashboard = () => {
   const [selectedBiddingStatuses, setSelectedBiddingStatuses] = useState<BiddingStatus[]>(['bda']);
@@ -27,6 +32,7 @@ export const ProjectDashboard = () => {
     selectedProjectId,
     setSelectedProjectId,
     projectData: project,
+    shotGridBaseUrl,
     loading,
     error,
     refresh,
@@ -183,7 +189,20 @@ export const ProjectDashboard = () => {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-[11px]">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Budget</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-muted-foreground cursor-help flex items-center gap-1">
+                  Budget
+                  <HelpCircle className="w-2.5 h-2.5" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-[220px]">
+                <p className="text-xs">
+                  <strong>Logged / Bid hours</strong> across all filtered shots. 
+                  Shows how much of the allocated budget has been used.
+                </p>
+              </TooltipContent>
+            </Tooltip>
             <span className="font-mono text-foreground">
               {Math.round(totalLoggedHours)}h / {Math.round(totalBidHours)}h
             </span>
@@ -191,17 +210,42 @@ export const ProjectDashboard = () => {
           </div>
           <div className="flex items-center gap-3">
             {redShots.length > 0 && (
-              <span className="text-destructive font-mono">{redShots.length} red</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-destructive font-mono cursor-help">{redShots.length} red</span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs">Shots where total logged hours exceed total bid hours</p>
+                </TooltipContent>
+              </Tooltip>
             )}
             {orangeShots.length > 0 && (
-              <span className="text-warning font-mono">{orangeShots.length} orange</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-warning font-mono cursor-help">{orangeShots.length} orange</span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs">Shots with at least one task over its individual bid</p>
+                </TooltipContent>
+              </Tooltip>
             )}
-            <span className={`font-mono font-semibold ${
-              budgetUtilization > 100 ? 'text-destructive' : 
-              budgetUtilization > 85 ? 'text-warning' : 'text-foreground'
-            }`}>
-              {budgetUtilization}%
-            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className={`font-mono font-semibold cursor-help ${
+                  budgetUtilization > 100 ? 'text-destructive' : 
+                  budgetUtilization > 85 ? 'text-warning' : 'text-foreground'
+                }`}>
+                  {budgetUtilization}%
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-xs">
+                  Overall budget utilization. 
+                  {budgetUtilization > 100 ? ' Over budget!' : 
+                   budgetUtilization > 85 ? ' Approaching budget limit.' : ' On track.'}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
         <div className="h-1 bg-secondary rounded-full overflow-hidden">
@@ -219,7 +263,12 @@ export const ProjectDashboard = () => {
       {/* Main Grid - 2x2 compact */}
       <div className="grid grid-cols-2 gap-2">
         {/* Status Overview */}
-        <AlertCard title="Status" icon={Clock} compact>
+        <AlertCard 
+          title="Status" 
+          icon={Clock} 
+          compact
+          tooltip="Shot status distribution across the project. Shows how many shots are in each pipeline stage."
+        >
           <StatusDonut shots={filteredShots} compact />
         </AlertCard>
 
@@ -229,12 +278,19 @@ export const ProjectDashboard = () => {
           icon={AlertTriangle} 
           variant={redShots.length > 0 ? 'danger' : orangeShots.length > 0 ? 'warning' : 'default'}
           compact
+          tooltip="Budget alerts: Red = shot over total bid, Orange = individual task over its bid. Click items for details."
         >
-          <BudgetWarnings shots={filteredShots} />
+          <BudgetWarnings shots={filteredShots} shotGridBaseUrl={shotGridBaseUrl} />
         </AlertCard>
 
         {/* Celebrations */}
-        <AlertCard title="Wins" icon={Star} variant="success" compact>
+        <AlertCard 
+          title="Wins" 
+          icon={Star} 
+          variant="success" 
+          compact
+          tooltip="Positive milestones: client approvals, finals delivered, and shots moving through the pipeline successfully."
+        >
           <Celebrations 
             shots={filteredShots}
             clientApprovedCount={filteredShots.filter(s => s.status === 'cl_apr').length}
@@ -244,7 +300,12 @@ export const ProjectDashboard = () => {
         </AlertCard>
 
         {/* Team */}
-        <AlertCard title="Team" icon={Users} compact>
+        <AlertCard 
+          title="Team" 
+          icon={Users} 
+          compact
+          tooltip="Artist workload based on logged vs bid hours. Shows who's on track and who may need support."
+        >
           <ArtistWorkload artists={project.artists} compact />
         </AlertCard>
       </div>

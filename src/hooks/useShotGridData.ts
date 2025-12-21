@@ -112,6 +112,7 @@ export const useShotGridData = () => {
   const [projects, setProjects] = useState<Array<{ id: string; name: string; client: string }>>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
+  const [shotGridBaseUrl, setShotGridBaseUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -138,6 +139,11 @@ export const useShotGridData = () => {
         name: p.attributes.name,
         client: p.attributes.code || 'Unknown Client',
       }));
+
+      // Store the ShotGrid base URL for building links
+      if (data.baseUrl) {
+        setShotGridBaseUrl(data.baseUrl);
+      }
 
       setProjects(mappedProjects);
       
@@ -373,6 +379,7 @@ export const useShotGridData = () => {
     selectedProjectId,
     setSelectedProjectId,
     projectData,
+    shotGridBaseUrl,
     loading,
     error,
     refresh,

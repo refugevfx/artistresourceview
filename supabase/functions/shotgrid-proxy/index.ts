@@ -71,6 +71,9 @@ serve(async (req) => {
     };
 
     let responseData;
+    
+    // Include base URL in response for building links
+    const baseUrl = shotgridUrl;
 
     switch (action) {
       case 'getProjects': {
@@ -94,6 +97,7 @@ serve(async (req) => {
         }
         
         responseData = await projectsResponse.json();
+        responseData.baseUrl = baseUrl; // Add base URL to response
         console.log(`Fetched ${responseData.data?.length || 0} active projects`);
         break;
       }
