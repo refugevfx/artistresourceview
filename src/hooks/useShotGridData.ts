@@ -201,6 +201,9 @@ export const useShotGridData = () => {
       const sgTasks: ShotGridTask[] = tasksResult.data?.data || [];
       const sgArtists: ShotGridArtist[] = artistsResult.data?.data || [];
 
+      // Only count team members (and task assignees) that are returned from getArtists.
+      // getArtists is already filtered server-side to Artist + Manager permission groups, and includes inactive users.
+      const allowedAssigneeIds = new Set<number>(sgArtists.map((a) => a.id));
       // Group tasks by shot entity ID (entity is in relationships, not attributes)
       const tasksByShotId: Record<number, ShotGridTask[]> = {};
       sgTasks.forEach((task) => {
@@ -219,9 +222,10 @@ export const useShotGridData = () => {
         const shotTasks = tasksByShotId[sgShot.id] || [];
         
         const tasks: Task[] = shotTasks.map((t) => {
-          // Get assignee from relationships
-          const assigneeData = t.relationships?.task_assignees?.data?.[0];
-          const assigneeName = assigneeData?.name || 'Unassigned';
+          // Prefer the first assignee that is in our allowed set (Artist/Manager)
+          const assignees = t.relationships?.task_assignees?.data || [];
+          const allowedAssignee = assignees.find((a) => allowedAssigneeIds.has(a.id));
+          const assigneeName = allowedAssignee?.name || 'Unassigned';
           
           return {
             id: String(t.id),
@@ -292,6 +296,9 @@ export const useShotGridData = () => {
         );
         
         assignees.forEach((assignee) => {
+          // Filter out vendors/other permission groups by only counting allowed Artist/Manager users
+          if (!allowedAssigneeIds.has(assignee.id)) return;
+
           const assigneeName = assignee.name || `User ${assignee.id}`;
           if (!artistStats[assigneeName]) {
             artistStats[assigneeName] = {
