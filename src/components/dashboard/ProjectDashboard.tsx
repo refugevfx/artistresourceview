@@ -49,8 +49,8 @@ export const ProjectDashboard = () => {
     if (!project) return [];
     const episodeMap = new Map<string, number>();
     project.shots.forEach(shot => {
-      // Match pattern like "LAT_101_0010" -> captures "LAT_101"
-      const match = shot.code.match(/^([A-Za-z]+_\d+)_/);
+      // Match pattern like "LAT_101_0010" -> "LAT_101" OR "DKT206_013_XXX" -> "DKT206"
+      const match = shot.code.match(/^([A-Za-z]+\d+|[A-Za-z]+_\d+)_/);
       if (match) {
         const ep = match[1];
         // Only include episodes that start with the folder prefix (if set)
