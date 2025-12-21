@@ -228,13 +228,7 @@ serve(async (req) => {
         console.log('Fetching artists (HumanUsers) from ShotGrid - Artists and Managers only...');
         const artistsPayload = {
           filters: [
-            {
-              "filter_operator": "any",
-              "filters": [
-                ["permission_rule_set.PermissionRuleSet.code", "is", "Artist"],
-                ["permission_rule_set.PermissionRuleSet.code", "is", "Manager"]
-              ]
-            }
+            ["permission_rule_set.PermissionRuleSet.code", "in", ["Artist", "Manager"]]
           ],
           fields: ["name", "department", "image", "email", "permission_rule_set", "sg_status_list"],
         };
