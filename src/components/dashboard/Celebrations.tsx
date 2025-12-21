@@ -1,5 +1,6 @@
 import { Shot, getStatusConfig } from '@/types/project';
 import { Trophy, Sparkles } from 'lucide-react';
+import { TimeComparisonBar } from './TimeComparisonBar';
 
 interface CelebrationsProps {
   shots: Shot[];
@@ -34,6 +35,9 @@ export const Celebrations = ({ shots, clientApprovedCount, clientPendingCount, c
             <p className="text-[9px] text-primary/80">w/ Client</p>
           </div>
         </div>
+
+        {/* Time Comparison Bar */}
+        <TimeComparisonBar shots={shots} compact />
 
         {/* Recent */}
         {recentApprovals.length > 0 && (
