@@ -228,6 +228,22 @@ export const useShotGridData = () => {
       });
       console.log('Bidding status distribution:', biddingStatusCounts);
 
+      // Debug: log shots with over-budget tasks
+      const shotsWithOverBudgetTasks = shots.filter(shot => 
+        shot.tasks.some(t => t.loggedHours > t.bidHours && t.bidHours > 0)
+      );
+      console.log('Shots with over-budget tasks:', shotsWithOverBudgetTasks.length);
+      
+      // Debug: log sample task data
+      const allTasks = shots.flatMap(s => s.tasks);
+      const tasksWithBid = allTasks.filter(t => t.bidHours > 0);
+      const tasksWithLogged = allTasks.filter(t => t.loggedHours > 0);
+      console.log(`Total tasks: ${allTasks.length}, with bid: ${tasksWithBid.length}, with logged: ${tasksWithLogged.length}`);
+      
+      if (tasksWithBid.length > 0) {
+        console.log('Sample task with bid:', tasksWithBid[0]);
+      }
+
       // Calculate artist stats from tasks
       const artistStats: Record<string, { 
         activeTasks: number; 

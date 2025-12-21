@@ -167,6 +167,16 @@ serve(async (req) => {
 
         responseData = await tasksResponse.json();
         console.log(`Fetched ${responseData.data?.length || 0} tasks`);
+        
+        // Log sample task to debug field names
+        if (responseData.data?.[0]) {
+          console.log('Sample task attributes:', JSON.stringify(responseData.data[0].attributes));
+        }
+        
+        // Log tasks with bid/logged time
+        const tasksWithBid = responseData.data?.filter((t: any) => t.attributes.est_in_mins > 0) || [];
+        const tasksWithTime = responseData.data?.filter((t: any) => t.attributes.time_logs_sum > 0) || [];
+        console.log(`Tasks with est_in_mins: ${tasksWithBid.length}, Tasks with time_logs_sum: ${tasksWithTime.length}`);
         break;
       }
 
