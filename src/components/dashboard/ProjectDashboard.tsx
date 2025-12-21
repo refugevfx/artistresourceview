@@ -291,11 +291,11 @@ export const ProjectDashboard = () => {
           compact
           tooltip="Positive milestones: client approvals, finals delivered, and shots moving through the pipeline successfully."
         >
-          <Celebrations 
-            shots={filteredShots}
-            clientApprovedCount={filteredShots.filter(s => s.status === 'cl_apr').length}
-            clientPendingCount={filteredShots.filter(s => ['cl_ip', 'cl_rev'].includes(s.status)).length}
-            compact
+        <Celebrations 
+          shots={filteredShots}
+          clientApprovedCount={filteredShots.filter(s => ['fin', 'cl_apr'].includes(s.status)).length}
+          clientPendingCount={filteredShots.filter(s => s.status === 'cl_rev').length}
+          compact
           />
         </AlertCard>
 
