@@ -1,4 +1,4 @@
-import { Shot } from '@/types/project';
+import { Shot, getStatusConfig } from '@/types/project';
 import { cn } from '@/lib/utils';
 import { Clock } from 'lucide-react';
 
@@ -6,10 +6,12 @@ interface OverdueShotsProps {
   shots: Shot[];
 }
 
+const doneStatuses = ['apr', 'cl_apr', 'fin', 'omt'];
+
 export const OverdueShots = ({ shots }: OverdueShotsProps) => {
   const now = new Date();
   const overdueShots = shots
-    .filter(s => new Date(s.dueDate) < now && s.status !== 'approved' && s.status !== 'omit')
+    .filter(s => new Date(s.dueDate) < now && !doneStatuses.includes(s.status))
     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
     .slice(0, 5);
 
@@ -35,6 +37,10 @@ export const OverdueShots = ({ shots }: OverdueShotsProps) => {
       {overdueShots.map((shot, idx) => {
         const daysOver = getDaysOverdue(shot.dueDate);
         const severity = daysOver >= 5 ? 'critical' : daysOver >= 3 ? 'high' : 'medium';
+        const statusConfig = getStatusConfig(shot.status);
+        // Get primary assignee from tasks
+        const primaryAssignee = shot.tasks[0]?.assignee || 'Unassigned';
+        const primaryDept = shot.tasks[0]?.department || '';
         
         return (
           <div 
@@ -49,7 +55,7 @@ export const OverdueShots = ({ shots }: OverdueShotsProps) => {
           >
             <div className="flex-1 min-w-0">
               <p className="text-sm font-mono font-semibold text-foreground truncate">{shot.code}</p>
-              <p className="text-xs text-muted-foreground">{shot.department} • {shot.assignee}</p>
+              <p className="text-xs text-muted-foreground">{primaryDept} • {primaryAssignee}</p>
             </div>
             <div className={cn(
               'flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-semibold',
