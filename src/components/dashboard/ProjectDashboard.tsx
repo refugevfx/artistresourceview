@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ProjectData } from '@/types/project';
-import { generateMockProject, getRedShots, getOrangeShots, mockProjects } from '@/data/mockProjectData';
+import { useShotGridData } from '@/hooks/useShotGridData';
+import { getRedShots, getOrangeShots } from '@/data/mockProjectData';
 import { StatusDonut } from './StatusDonut';
 import { AlertCard } from './AlertCard';
 import { DeadlineCounter } from './DeadlineCounter';
@@ -8,7 +7,7 @@ import { ArtistWorkload } from './ArtistWorkload';
 import { BudgetWarnings } from './BudgetWarnings';
 import { Celebrations } from './Celebrations';
 import { ShotTypeBreakdown } from './ShotTypeBreakdown';
-import { Clock, AlertTriangle, Users, Star, ChevronDown } from 'lucide-react';
+import { Clock, AlertTriangle, Users, Star, ChevronDown, RefreshCw, AlertCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,18 +16,44 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export const ProjectDashboard = () => {
-  const [selectedProjectId, setSelectedProjectId] = useState(mockProjects[0].id);
-  const [project, setProject] = useState<ProjectData | null>(null);
+  const {
+    projects,
+    selectedProjectId,
+    setSelectedProjectId,
+    projectData: project,
+    loading,
+    error,
+    refresh,
+  } = useShotGridData();
 
-  useEffect(() => {
-    const data = generateMockProject(selectedProjectId);
-    setProject(data);
-  }, [selectedProjectId]);
-
-  if (!project) {
+  if (error) {
     return (
-      <div className="flex items-center justify-center h-48">
-        <div className="animate-pulse text-muted-foreground text-sm">Loading...</div>
+      <div className="p-4 max-w-2xl mx-auto font-sans">
+        <div className="flex flex-col items-center justify-center h-48 gap-3 text-center">
+          <AlertCircle className="w-8 h-8 text-destructive" />
+          <div>
+            <p className="text-sm font-medium text-foreground">Connection Error</p>
+            <p className="text-xs text-muted-foreground mt-1">{error}</p>
+          </div>
+          <button
+            onClick={refresh}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-secondary hover:bg-accent rounded transition-colors"
+          >
+            <RefreshCw className="w-3 h-3" />
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading || !project) {
+    return (
+      <div className="p-4 max-w-2xl mx-auto font-sans">
+        <div className="flex items-center justify-center h-48 gap-2">
+          <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Syncing with ShotGrid...</span>
+        </div>
       </div>
     );
   }
@@ -52,7 +77,7 @@ export const ProjectDashboard = () => {
             <ChevronDown className="w-3 h-3 text-muted-foreground flex-shrink-0" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="bg-popover border-border z-50">
-            {mockProjects.map((p) => (
+            {projects.map((p) => (
               <DropdownMenuItem
                 key={p.id}
                 onClick={() => setSelectedProjectId(p.id)}
@@ -66,7 +91,16 @@ export const ProjectDashboard = () => {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        <DeadlineCounter deadline={project.deadline} compact />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={refresh}
+            className="p-1 hover:bg-secondary rounded transition-colors"
+            title="Refresh data"
+          >
+            <RefreshCw className="w-3 h-3 text-muted-foreground" />
+          </button>
+          <DeadlineCounter deadline={project.deadline} compact />
+        </div>
       </div>
 
       {/* Budget Bar */}
@@ -75,7 +109,7 @@ export const ProjectDashboard = () => {
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Budget</span>
             <span className="font-mono text-foreground">
-              {project.totalLoggedHours}h / {project.totalBidHours}h
+              {Math.round(project.totalLoggedHours)}h / {Math.round(project.totalBidHours)}h
             </span>
           </div>
           <div className="flex items-center gap-3">
