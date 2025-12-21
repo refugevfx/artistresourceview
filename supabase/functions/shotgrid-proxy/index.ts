@@ -170,13 +170,14 @@ serve(async (req) => {
         
         // Log sample task to debug field names
         if (responseData.data?.[0]) {
-          console.log('Sample task attributes:', JSON.stringify(responseData.data[0].attributes));
+          console.log('Sample task full data:', JSON.stringify(responseData.data[0]));
         }
         
         // Log tasks with bid/logged time
         const tasksWithBid = responseData.data?.filter((t: any) => t.attributes.est_in_mins > 0) || [];
         const tasksWithTime = responseData.data?.filter((t: any) => t.attributes.time_logs_sum > 0) || [];
-        console.log(`Tasks with est_in_mins: ${tasksWithBid.length}, Tasks with time_logs_sum: ${tasksWithTime.length}`);
+        const tasksWithEntity = responseData.data?.filter((t: any) => t.relationships?.entity?.data) || [];
+        console.log(`Tasks with est_in_mins: ${tasksWithBid.length}, Tasks with time_logs_sum: ${tasksWithTime.length}, Tasks with entity: ${tasksWithEntity.length}`);
         break;
       }
 
