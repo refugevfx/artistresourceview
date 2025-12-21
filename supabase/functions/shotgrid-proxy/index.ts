@@ -225,10 +225,18 @@ serve(async (req) => {
       }
 
       case 'getArtists': {
-        console.log('Fetching artists (HumanUsers) from ShotGrid...');
+        console.log('Fetching artists (HumanUsers) from ShotGrid - Artists and Managers only...');
         const artistsPayload = {
-          filters: [["sg_status_list", "is", "act"]],
-          fields: ["name", "department", "image", "email"],
+          filters: [
+            {
+              "filter_operator": "any",
+              "filters": [
+                ["permission_rule_set.PermissionRuleSet.code", "is", "Artist"],
+                ["permission_rule_set.PermissionRuleSet.code", "is", "Manager"]
+              ]
+            }
+          ],
+          fields: ["name", "department", "image", "email", "permission_rule_set", "sg_status_list"],
         };
 
         const allArtists = await fetchAllPages(
@@ -238,6 +246,12 @@ serve(async (req) => {
           'artists',
           200
         );
+        
+        // Log sample artist to verify filtering
+        if (allArtists[0]) {
+          console.log('Sample artist:', JSON.stringify(allArtists[0]));
+        }
+        console.log(`Filtered to ${allArtists.length} artists/managers (includes inactive users)`);
         
         responseData = { data: allArtists };
         break;
