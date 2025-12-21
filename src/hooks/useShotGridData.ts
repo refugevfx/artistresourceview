@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ProjectData, Shot, Task, Artist, ShotStatus, ShotType } from '@/types/project';
+import { ProjectData, Shot, Task, Artist, ShotStatus, ShotType, BiddingStatus } from '@/types/project';
 
 interface ShotGridProject {
   id: number;
@@ -17,6 +17,7 @@ interface ShotGridShot {
     code: string;
     sg_status_list?: string;
     sg_shot_type?: string;
+    sg_bid_status?: string;
     sg_priority?: string;
     sg_notes_count?: number;
     sg_final_date?: string;
@@ -95,6 +96,14 @@ const mapPriority = (priority: string | undefined): 'low' | 'medium' | 'high' | 
     'urgent': 'critical',
   };
   return priorityMap[priority?.toLowerCase() || ''] || 'medium';
+};
+
+const mapBiddingStatus = (status: string | undefined): BiddingStatus | undefined => {
+  const validStatuses: BiddingStatus[] = ['tbb', 'bid', 'bds', 'bda', 'bidre', 'bcdt', 'poi', 'omt'];
+  if (status && validStatuses.includes(status as BiddingStatus)) {
+    return status as BiddingStatus;
+  }
+  return undefined;
 };
 
 export const useShotGridData = () => {
@@ -202,6 +211,7 @@ export const useShotGridData = () => {
           code: sgShot.attributes.code,
           status: mapShotGridStatus(sgShot.attributes.sg_status_list),
           shotType: mapShotType(sgShot.attributes.sg_shot_type),
+          biddingStatus: mapBiddingStatus(sgShot.attributes.sg_bid_status),
           tasks,
           dueDate: sgShot.attributes.due_date || new Date().toISOString(),
           finalDate: sgShot.attributes.sg_final_date,

@@ -109,7 +109,8 @@ serve(async (req) => {
           fields: [
             "code", "sg_status_list", "sg_shot_type", "sg_cut_duration",
             "description", "sg_sequence", "updated_at", "created_at",
-            "sg_priority", "sg_notes_count", "sg_final_date", "due_date"
+            "sg_priority", "sg_notes_count", "sg_final_date", "due_date",
+            "sg_bid_status"
           ],
           page: { size: 500 },
         };
