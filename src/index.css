@@ -7,7 +7,7 @@
 @layer base {
   :root {
     /* Notion-inspired dark theme */
-    --background: 0 0% 8%;
+    --background: 0 0% 10%; /* Notion-like dark background */
     --foreground: 0 0% 90%;
 
     --card: 0 0% 11%;
