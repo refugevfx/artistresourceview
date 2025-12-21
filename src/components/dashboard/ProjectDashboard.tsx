@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ProjectData } from '@/types/project';
-import { generateMockProject, getRedShots, getOrangeShots } from '@/data/mockProjectData';
+import { generateMockProject, getRedShots, getOrangeShots, mockProjects } from '@/data/mockProjectData';
 import { StatusDonut } from './StatusDonut';
 import { AlertCard } from './AlertCard';
 import { DeadlineCounter } from './DeadlineCounter';
@@ -8,15 +8,22 @@ import { ArtistWorkload } from './ArtistWorkload';
 import { BudgetWarnings } from './BudgetWarnings';
 import { Celebrations } from './Celebrations';
 import { ShotTypeBreakdown } from './ShotTypeBreakdown';
-import { Clock, AlertTriangle, Users, Star } from 'lucide-react';
+import { Clock, AlertTriangle, Users, Star, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export const ProjectDashboard = () => {
+  const [selectedProjectId, setSelectedProjectId] = useState(mockProjects[0].id);
   const [project, setProject] = useState<ProjectData | null>(null);
 
   useEffect(() => {
-    const data = generateMockProject();
+    const data = generateMockProject(selectedProjectId);
     setProject(data);
-  }, []);
+  }, [selectedProjectId]);
 
   if (!project) {
     return (
@@ -34,12 +41,31 @@ export const ProjectDashboard = () => {
 
   return (
     <div className="p-3 space-y-3 max-w-3xl mx-auto">
-      {/* Compact Header */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-base font-bold text-foreground truncate">{project.name}</h1>
-          <p className="text-xs text-muted-foreground">{project.client}</p>
-        </div>
+      {/* Compact Header with Project Filter */}
+      <div className="flex items-center justify-between gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex items-center gap-1.5 min-w-0 hover:bg-secondary/50 rounded px-1.5 py-0.5 transition-colors">
+            <div className="min-w-0 text-left">
+              <h1 className="text-base font-bold text-foreground truncate">{project.name}</h1>
+              <p className="text-xs text-muted-foreground truncate">{project.client}</p>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="bg-card border-border z-50">
+            {mockProjects.map((p) => (
+              <DropdownMenuItem
+                key={p.id}
+                onClick={() => setSelectedProjectId(p.id)}
+                className={p.id === selectedProjectId ? 'bg-primary/10' : ''}
+              >
+                <div>
+                  <div className="font-medium">{p.name}</div>
+                  <div className="text-xs text-muted-foreground">{p.client}</div>
+                </div>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <DeadlineCounter deadline={project.deadline} compact />
       </div>
 

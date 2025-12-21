@@ -141,7 +141,15 @@ const generateMockArtists = (shots: Shot[]): Artist[] => {
   });
 };
 
-export const generateMockProject = (): ProjectData => {
+// Generate multiple mock projects for filtering
+export const mockProjects = [
+  { id: 'proj_001', name: 'TITAN_S02', client: 'Paramount Pictures' },
+  { id: 'proj_002', name: 'NOVA_EP03', client: 'Netflix' },
+  { id: 'proj_003', name: 'ECLIPSE_M01', client: 'Warner Bros' },
+];
+
+export const generateMockProject = (projectId?: string): ProjectData => {
+  const project = mockProjects.find(p => p.id === projectId) || mockProjects[0];
   const shots = generateMockShots();
   const artists = generateMockArtists(shots);
   const activeShots = shots.filter(s => s.status !== 'omt');
@@ -154,9 +162,9 @@ export const generateMockProject = (): ProjectData => {
   const totalLogged = allTasks.reduce((sum, t) => sum + t.loggedHours, 0);
 
   return {
-    id: 'proj_001',
-    name: 'TITAN_S02',
-    client: 'Paramount Pictures',
+    id: project.id,
+    name: project.name,
+    client: project.client,
     deadline: deadline.toISOString(),
     shots,
     artists,
