@@ -40,12 +40,13 @@ export const ProjectDashboard = () => {
     refresh,
   } = useShotGridData();
 
-  // Extract unique episodes from shot codes with shot counts (e.g., "101_0010" -> "101")
+  // Extract unique episodes from shot codes with shot counts (e.g., "LAT_101_0010" -> "LAT_101")
   const episodesWithCounts = useMemo(() => {
     if (!project) return [];
     const episodeMap = new Map<string, number>();
     project.shots.forEach(shot => {
-      const match = shot.code.match(/^(\d+)_/);
+      // Match pattern like "LAT_101_0010" -> captures "LAT_101"
+      const match = shot.code.match(/^([A-Za-z]+_\d+)_/);
       if (match) {
         const ep = match[1];
         episodeMap.set(ep, (episodeMap.get(ep) || 0) + 1);
@@ -174,16 +175,16 @@ export const ProjectDashboard = () => {
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1 px-2 py-1 text-[10px] bg-secondary hover:bg-accent rounded transition-colors">
               <span className="font-medium">
-                {selectedEpisode ? `Ep ${selectedEpisode}` : 'All Episodes'}
+                {selectedEpisode || 'Project'}
               </span>
               <ChevronDown className="w-2.5 h-2.5" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="bg-popover border-border z-50 min-w-[120px]">
+            <DropdownMenuContent align="start" className="bg-popover border-border z-50 min-w-[140px]">
               <DropdownMenuItem 
                 onClick={() => setSelectedEpisode(null)} 
                 className={`text-xs ${!selectedEpisode ? 'bg-accent' : ''}`}
               >
-                All Episodes
+                Project
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {episodesWithCounts.map((ep) => (
@@ -192,7 +193,7 @@ export const ProjectDashboard = () => {
                   onClick={() => setSelectedEpisode(ep.code)}
                   className={`text-xs flex justify-between ${selectedEpisode === ep.code ? 'bg-accent' : ''}`}
                 >
-                  <span>Episode {ep.code}</span>
+                  <span>{ep.code}</span>
                   <span className="text-muted-foreground ml-2">{ep.count}</span>
                 </DropdownMenuItem>
               ))}
