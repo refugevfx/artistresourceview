@@ -40,17 +40,20 @@ export const ProjectDashboard = () => {
     refresh,
   } = useShotGridData();
 
-  // Extract unique episodes from shot codes (e.g., "101_0010" -> "101")
-  const episodes = useMemo(() => {
+  // Extract unique episodes from shot codes with shot counts (e.g., "101_0010" -> "101")
+  const episodesWithCounts = useMemo(() => {
     if (!project) return [];
-    const episodeSet = new Set<string>();
+    const episodeMap = new Map<string, number>();
     project.shots.forEach(shot => {
       const match = shot.code.match(/^(\d+)_/);
       if (match) {
-        episodeSet.add(match[1]);
+        const ep = match[1];
+        episodeMap.set(ep, (episodeMap.get(ep) || 0) + 1);
       }
     });
-    return Array.from(episodeSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    return Array.from(episodeMap.entries())
+      .map(([code, count]) => ({ code, count }))
+      .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
   }, [project]);
 
   // Filter shots based on selected bidding statuses AND episode
@@ -183,13 +186,14 @@ export const ProjectDashboard = () => {
                 All Episodes
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              {episodes.map((ep) => (
+              {episodesWithCounts.map((ep) => (
                 <DropdownMenuItem
-                  key={ep}
-                  onClick={() => setSelectedEpisode(ep)}
-                  className={`text-xs ${selectedEpisode === ep ? 'bg-accent' : ''}`}
+                  key={ep.code}
+                  onClick={() => setSelectedEpisode(ep.code)}
+                  className={`text-xs flex justify-between ${selectedEpisode === ep.code ? 'bg-accent' : ''}`}
                 >
-                  Episode {ep}
+                  <span>Episode {ep.code}</span>
+                  <span className="text-muted-foreground ml-2">{ep.count}</span>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
