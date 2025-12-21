@@ -1,5 +1,10 @@
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface AlertCardProps {
   title: string;
@@ -8,6 +13,7 @@ interface AlertCardProps {
   children: React.ReactNode;
   className?: string;
   compact?: boolean;
+  tooltip?: string;
 }
 
 export const AlertCard = ({ 
@@ -17,7 +23,24 @@ export const AlertCard = ({
   children,
   className,
   compact = false,
+  tooltip,
 }: AlertCardProps) => {
+  const headerContent = (
+    <div className={cn(
+      'flex items-center gap-1.5 font-medium',
+      compact ? 'mb-1.5 text-xs' : 'mb-2 text-sm',
+      variant === 'default' && 'text-foreground',
+      variant === 'warning' && 'text-warning',
+      variant === 'danger' && 'text-destructive',
+      variant === 'success' && 'text-success',
+      variant === 'info' && 'text-primary',
+      tooltip && 'cursor-help',
+    )}>
+      <Icon className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
+      {title}
+    </div>
+  );
+
   return (
     <div className={cn(
       'rounded-lg border transition-all',
@@ -29,18 +52,18 @@ export const AlertCard = ({
       variant === 'info' && 'bg-primary/5 border-primary/30',
       className
     )}>
-      <div className={cn(
-        'flex items-center gap-1.5 font-medium',
-        compact ? 'mb-1.5 text-xs' : 'mb-2 text-sm',
-        variant === 'default' && 'text-foreground',
-        variant === 'warning' && 'text-warning',
-        variant === 'danger' && 'text-destructive',
-        variant === 'success' && 'text-success',
-        variant === 'info' && 'text-primary',
-      )}>
-        <Icon className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
-        {title}
-      </div>
+      {tooltip ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {headerContent}
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[220px]">
+            <p className="text-xs">{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        headerContent
+      )}
       <div className="text-foreground">
         {children}
       </div>
