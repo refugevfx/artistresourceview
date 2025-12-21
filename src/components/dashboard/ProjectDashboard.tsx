@@ -150,7 +150,7 @@ export const ProjectDashboard = () => {
   };
 
   return (
-    <div className="p-4 space-y-3 max-w-2xl mx-auto font-sans">
+    <div className="p-4 space-y-3 max-w-6xl mx-auto font-sans">
       {/* Compact Header with Project Filter */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
@@ -323,8 +323,8 @@ export const ProjectDashboard = () => {
         <ShotTypeBreakdown shots={filteredShots} />
       </div>
 
-      {/* Main Grid - 2x2 compact */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* Main Grid - responsive flow */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         {/* Status Overview */}
         <AlertCard 
           title="Status" 
