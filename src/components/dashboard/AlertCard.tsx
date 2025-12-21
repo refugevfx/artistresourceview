@@ -9,7 +9,7 @@ import {
 interface AlertCardProps {
   title: string;
   icon: LucideIcon;
-  variant?: 'default' | 'warning' | 'danger' | 'success' | 'info';
+  variant?: 'default' | 'warning' | 'danger' | 'success' | 'info' | 'gold';
   children: React.ReactNode;
   className?: string;
   compact?: boolean;
@@ -34,9 +34,10 @@ export const AlertCard = ({
       variant === 'danger' && 'text-destructive',
       variant === 'success' && 'text-success',
       variant === 'info' && 'text-primary',
+      variant === 'gold' && 'text-amber-500',
       tooltip && 'cursor-help',
     )}>
-      <Icon className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
+      <Icon className={cn(compact ? 'w-3 h-3' : 'w-4 h-4', variant === 'gold' && 'fill-amber-500')} />
       {title}
     </div>
   );
@@ -50,6 +51,7 @@ export const AlertCard = ({
       variant === 'danger' && 'bg-destructive/5 border-destructive/30',
       variant === 'success' && 'bg-success/5 border-success/30',
       variant === 'info' && 'bg-primary/5 border-primary/30',
+      variant === 'gold' && 'bg-amber-500/5 border-amber-500/30',
       className
     )}>
       {tooltip ? (
