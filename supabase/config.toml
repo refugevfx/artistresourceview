@@ -1,1 +1,4 @@
 project_id = "bpqfbbfdstqcxxikmxwf"
+
+[functions.shotgrid-proxy]
+verify_jwt = false
