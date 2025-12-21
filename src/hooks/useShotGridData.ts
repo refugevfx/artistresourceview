@@ -8,6 +8,7 @@ interface ShotGridProject {
     name: string;
     sg_status?: string;
     code?: string;
+    sg_folder_prefix?: string;
   };
 }
 
@@ -109,7 +110,7 @@ const mapBiddingStatus = (status: string | undefined): BiddingStatus | undefined
 };
 
 export const useShotGridData = () => {
-  const [projects, setProjects] = useState<Array<{ id: string; name: string; client: string }>>([]);
+  const [projects, setProjects] = useState<Array<{ id: string; name: string; client: string; folderPrefix?: string }>>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
   const [shotGridBaseUrl, setShotGridBaseUrl] = useState<string | null>(null);
@@ -138,6 +139,7 @@ export const useShotGridData = () => {
         id: String(p.id),
         name: p.attributes.name,
         client: p.attributes.code || 'Unknown Client',
+        folderPrefix: p.attributes.sg_folder_prefix,
       }));
 
       // Store the ShotGrid base URL for building links

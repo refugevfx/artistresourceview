@@ -40,7 +40,11 @@ export const ProjectDashboard = () => {
     refresh,
   } = useShotGridData();
 
-  // Extract unique episodes from shot codes with shot counts (e.g., "LAT_101_0010" -> "LAT_101")
+  // Get the folder prefix for the selected project
+  const currentProject = projects.find(p => p.id === selectedProjectId);
+  const folderPrefix = currentProject?.folderPrefix;
+
+  // Extract unique episodes from shot codes, filtered by folder prefix (e.g., "LAT_101_0010" -> "LAT_101")
   const episodesWithCounts = useMemo(() => {
     if (!project) return [];
     const episodeMap = new Map<string, number>();
@@ -49,13 +53,16 @@ export const ProjectDashboard = () => {
       const match = shot.code.match(/^([A-Za-z]+_\d+)_/);
       if (match) {
         const ep = match[1];
-        episodeMap.set(ep, (episodeMap.get(ep) || 0) + 1);
+        // Only include episodes that start with the folder prefix (if set)
+        if (!folderPrefix || ep.startsWith(folderPrefix)) {
+          episodeMap.set(ep, (episodeMap.get(ep) || 0) + 1);
+        }
       }
     });
     return Array.from(episodeMap.entries())
       .map(([code, count]) => ({ code, count }))
       .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
-  }, [project]);
+  }, [project, folderPrefix]);
 
   // Filter shots based on selected bidding statuses AND episode
   const filteredShots = useMemo(() => {
