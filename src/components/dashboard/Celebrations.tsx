@@ -1,5 +1,5 @@
 import { Shot, getStatusConfig } from '@/types/project';
-import { Trophy, Sparkles } from 'lucide-react';
+import { Star, Circle } from 'lucide-react';
 import { TimeComparisonBar } from './TimeComparisonBar';
 
 interface CelebrationsProps {
@@ -20,19 +20,19 @@ export const Celebrations = ({ shots, clientApprovedCount, clientPendingCount, c
       <div className="space-y-2">
         {/* Stats Row */}
         <div className="flex gap-2">
-          <div className="flex-1 p-1.5 rounded bg-success/10 border border-success/20 text-center">
-            <div className="flex items-center justify-center gap-1 text-success">
-              <Trophy className="w-3 h-3" />
+          <div className="flex-1 p-1.5 rounded bg-amber-500/10 border border-amber-500/20 text-center">
+            <div className="flex items-center justify-center gap-1 text-amber-500">
+              <Star className="w-3 h-3 fill-amber-500" />
               <span className="text-sm font-bold">{clientApprovedCount}</span>
             </div>
-            <p className="text-[9px] text-success/80">Approved</p>
+            <p className="text-[9px] text-amber-500/80">Approved</p>
           </div>
-          <div className="flex-1 p-1.5 rounded bg-primary/10 border border-primary/20 text-center">
-            <div className="flex items-center justify-center gap-1 text-primary">
-              <Sparkles className="w-3 h-3" />
+          <div className="flex-1 p-1.5 rounded bg-blue-500/10 border border-blue-500/20 text-center">
+            <div className="flex items-center justify-center gap-1 text-blue-500">
+              <Circle className="w-3 h-3 fill-blue-500" />
               <span className="text-sm font-bold">{clientPendingCount}</span>
             </div>
-            <p className="text-[9px] text-primary/80">w/ Client</p>
+            <p className="text-[9px] text-blue-500/80">w/ Client</p>
           </div>
         </div>
 
@@ -45,7 +45,7 @@ export const Celebrations = ({ shots, clientApprovedCount, clientPendingCount, c
             {recentApprovals.map((shot) => (
               <span 
                 key={shot.id}
-                className="px-1.5 py-0.5 rounded bg-success/10 text-success font-mono text-[10px]"
+                className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-mono text-[10px]"
               >
                 {shot.code.split('_')[1]}
               </span>
@@ -62,19 +62,19 @@ export const Celebrations = ({ shots, clientApprovedCount, clientPendingCount, c
     <div className="space-y-3">
       {/* Summary Stats */}
       <div className="flex gap-2">
-        <div className="flex-1 p-2 rounded-md bg-success/10 border border-success/20 text-center">
-          <div className="flex items-center justify-center gap-1 text-success mb-0.5">
-            <Trophy className="w-3.5 h-3.5" />
+        <div className="flex-1 p-2 rounded-md bg-amber-500/10 border border-amber-500/20 text-center">
+          <div className="flex items-center justify-center gap-1 text-amber-500 mb-0.5">
+            <Star className="w-3.5 h-3.5 fill-amber-500" />
             <span className="text-lg font-bold">{clientApprovedCount}</span>
           </div>
-          <p className="text-xs text-success/80">Client Approved</p>
+          <p className="text-xs text-amber-500/80">Client Approved</p>
         </div>
-        <div className="flex-1 p-2 rounded-md bg-primary/10 border border-primary/20 text-center">
-          <div className="flex items-center justify-center gap-1 text-primary mb-0.5">
-            <Sparkles className="w-3.5 h-3.5" />
+        <div className="flex-1 p-2 rounded-md bg-blue-500/10 border border-blue-500/20 text-center">
+          <div className="flex items-center justify-center gap-1 text-blue-500 mb-0.5">
+            <Circle className="w-3.5 h-3.5 fill-blue-500" />
             <span className="text-lg font-bold">{clientPendingCount}</span>
           </div>
-          <p className="text-xs text-primary/80">With Client</p>
+          <p className="text-xs text-blue-500/80">With Client</p>
         </div>
       </div>
 
@@ -90,7 +90,7 @@ export const Celebrations = ({ shots, clientApprovedCount, clientPendingCount, c
               return (
                 <div 
                   key={shot.id}
-                  className="flex items-center gap-2 p-1.5 rounded-md bg-success/5 border border-success/20 slide-in"
+                  className="flex items-center gap-2 p-1.5 rounded-md bg-amber-500/5 border border-amber-500/20 slide-in"
                   style={{ animationDelay: `${idx * 50}ms` }}
                 >
                   <div 
@@ -116,7 +116,7 @@ export const Celebrations = ({ shots, clientApprovedCount, clientPendingCount, c
             return (
               <div 
                 key={shot.id}
-                className="flex items-center justify-between p-1.5 rounded-md bg-primary/5 border border-primary/20 slide-in"
+                className="flex items-center justify-between p-1.5 rounded-md bg-blue-500/5 border border-blue-500/20 slide-in"
                 style={{ animationDelay: `${(recentApprovals.length + idx) * 50}ms` }}
               >
                 <div className="flex items-center gap-2">
