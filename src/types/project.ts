@@ -30,12 +30,16 @@ export interface Task {
   dueDate: string;
 }
 
+export type ShotType = 'creative' | 'normal' | 'complex' | 'simple';
+
 export interface Shot {
   id: string;
   code: string;
   status: ShotStatus;
+  shotType: ShotType;
   tasks: Task[];
   dueDate: string;
+  finalDate?: string; // Date shot reached 'fin' status
   priority: 'low' | 'medium' | 'high' | 'critical';
   notesCount: number;
   lastUpdate: string;
