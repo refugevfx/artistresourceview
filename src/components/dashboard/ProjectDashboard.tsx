@@ -40,27 +40,27 @@ export const ProjectDashboard = () => {
     : 0;
 
   return (
-    <div className="p-3 space-y-3 max-w-3xl mx-auto">
+    <div className="p-4 space-y-3 max-w-2xl mx-auto font-sans">
       {/* Compact Header with Project Filter */}
       <div className="flex items-center justify-between gap-2">
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-1.5 min-w-0 hover:bg-secondary/50 rounded px-1.5 py-0.5 transition-colors">
+          <DropdownMenuTrigger className="flex items-center gap-1.5 min-w-0 hover:bg-secondary rounded px-2 py-1 transition-colors -ml-2">
             <div className="min-w-0 text-left">
-              <h1 className="text-base font-bold text-foreground truncate">{project.name}</h1>
-              <p className="text-xs text-muted-foreground truncate">{project.client}</p>
+              <h1 className="text-sm font-semibold text-foreground truncate">{project.name}</h1>
+              <p className="text-[10px] text-muted-foreground truncate">{project.client}</p>
             </div>
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+            <ChevronDown className="w-3 h-3 text-muted-foreground flex-shrink-0" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="bg-card border-border z-50">
+          <DropdownMenuContent align="start" className="bg-popover border-border z-50">
             {mockProjects.map((p) => (
               <DropdownMenuItem
                 key={p.id}
                 onClick={() => setSelectedProjectId(p.id)}
-                className={p.id === selectedProjectId ? 'bg-primary/10' : ''}
+                className={p.id === selectedProjectId ? 'bg-accent' : ''}
               >
                 <div>
-                  <div className="font-medium">{p.name}</div>
-                  <div className="text-xs text-muted-foreground">{p.client}</div>
+                  <div className="font-medium text-sm">{p.name}</div>
+                  <div className="text-[10px] text-muted-foreground">{p.client}</div>
                 </div>
               </DropdownMenuItem>
             ))}
@@ -69,23 +69,31 @@ export const ProjectDashboard = () => {
         <DeadlineCounter deadline={project.deadline} compact />
       </div>
 
-      {/* Budget Bar + Shot Types */}
-      <div className="p-2 rounded-lg bg-card border border-border space-y-2">
-        <div className="flex items-center justify-between text-xs">
+      {/* Budget Bar */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-[11px]">
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Budget</span>
             <span className="font-mono text-foreground">
               {project.totalLoggedHours}h / {project.totalBidHours}h
             </span>
           </div>
-          <span className={`font-mono font-semibold ${
-            budgetUtilization > 100 ? 'text-destructive' : 
-            budgetUtilization > 85 ? 'text-warning' : 'text-success'
-          }`}>
-            {budgetUtilization}%
-          </span>
+          <div className="flex items-center gap-3">
+            {redShots.length > 0 && (
+              <span className="text-destructive font-mono">{redShots.length} red</span>
+            )}
+            {orangeShots.length > 0 && (
+              <span className="text-warning font-mono">{orangeShots.length} orange</span>
+            )}
+            <span className={`font-mono font-semibold ${
+              budgetUtilization > 100 ? 'text-destructive' : 
+              budgetUtilization > 85 ? 'text-warning' : 'text-foreground'
+            }`}>
+              {budgetUtilization}%
+            </span>
+          </div>
         </div>
-        <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+        <div className="h-1 bg-secondary rounded-full overflow-hidden">
           <div 
             className={`h-full transition-all duration-500 rounded-full ${
               budgetUtilization > 100 ? 'bg-destructive' : 
@@ -94,17 +102,7 @@ export const ProjectDashboard = () => {
             style={{ width: `${Math.min(budgetUtilization, 100)}%` }}
           />
         </div>
-        <div className="flex items-center justify-between">
-          <ShotTypeBreakdown shots={project.shots} />
-          <div className="flex items-center gap-2 text-[10px]">
-            {redShots.length > 0 && (
-              <span className="text-destructive font-medium">{redShots.length} red</span>
-            )}
-            {orangeShots.length > 0 && (
-              <span className="text-warning font-medium">{orangeShots.length} orange</span>
-            )}
-          </div>
-        </div>
+        <ShotTypeBreakdown shots={project.shots} />
       </div>
 
       {/* Main Grid - 2x2 compact */}
@@ -135,14 +133,14 @@ export const ProjectDashboard = () => {
         </AlertCard>
 
         {/* Team */}
-        <AlertCard title="Team" icon={Users} variant="info" compact>
+        <AlertCard title="Team" icon={Users} compact>
           <ArtistWorkload artists={project.artists} compact />
         </AlertCard>
       </div>
 
       {/* Footer */}
-      <p className="text-[10px] text-muted-foreground text-center">
-        Synced: {new Date().toLocaleTimeString()} · Mock data
+      <p className="text-[10px] text-muted-foreground text-center pt-1">
+        Synced {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
       </p>
     </div>
   );
