@@ -359,7 +359,7 @@ export const ProjectDashboard = () => {
         <AlertCard 
           title="Wins" 
           icon={Star} 
-          variant="success" 
+          variant="gold" 
           compact
           tooltip="Positive milestones: client approvals, finals delivered, and shots moving through the pipeline successfully."
         >
