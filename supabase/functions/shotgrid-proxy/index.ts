@@ -12,6 +12,61 @@ interface ShotGridAuthResponse {
   refresh_token: string;
 }
 
+// Helper function to fetch all pages of data
+async function fetchAllPages(
+  url: string,
+  headers: Record<string, string>,
+  basePayload: Record<string, any>,
+  entityName: string,
+  pageSize: number = 500
+): Promise<any[]> {
+  const allData: any[] = [];
+  let pageNumber = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const payload = {
+      ...basePayload,
+      page: { size: pageSize, number: pageNumber },
+    };
+
+    console.log(`Fetching ${entityName} page ${pageNumber}...`);
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to fetch ${entityName}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    const pageData = data.data || [];
+    allData.push(...pageData);
+
+    console.log(`Page ${pageNumber}: fetched ${pageData.length} ${entityName}`);
+
+    // Check if there are more pages
+    // ShotGrid returns fewer items than requested when we've reached the end
+    if (pageData.length < pageSize) {
+      hasMore = false;
+    } else {
+      pageNumber++;
+      // Safety limit to prevent infinite loops
+      if (pageNumber > 50) {
+        console.warn(`Stopping pagination at page 50 for ${entityName}`);
+        hasMore = false;
+      }
+    }
+  }
+
+  console.log(`Total ${entityName} fetched: ${allData.length}`);
+  return allData;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -64,13 +119,11 @@ serve(async (req) => {
 
     const headers = {
       'Authorization': `Bearer ${accessToken}`,
-      // ShotGrid search endpoints require one of these vendor content-types.
-      // We are using the "Array Style" filter format in our payloads.
       'Content-Type': 'application/vnd+shotgun.api3_array+json',
       'Accept': 'application/json',
     };
 
-    let responseData;
+    let responseData: any = {};
     
     // Include base URL in response for building links
     const baseUrl = shotgridUrl;
@@ -81,24 +134,17 @@ serve(async (req) => {
         const projectsPayload = {
           filters: [["sg_status", "is", "Active"]],
           fields: ["name", "sg_status", "code"],
-          page: { size: 100 },
         };
 
-        const projectsResponse = await fetch(`${shotgridUrl}/api/v1/entity/projects/_search`, {
-          method: 'POST',
+        const allProjects = await fetchAllPages(
+          `${shotgridUrl}/api/v1/entity/projects/_search`,
           headers,
-          body: JSON.stringify(projectsPayload),
-        });
+          projectsPayload,
+          'projects',
+          100
+        );
         
-        if (!projectsResponse.ok) {
-          const errorText = await projectsResponse.text();
-          console.error('Failed to fetch projects:', errorText);
-          throw new Error(`Failed to fetch projects: ${errorText}`);
-        }
-        
-        responseData = await projectsResponse.json();
-        responseData.baseUrl = baseUrl; // Add base URL to response
-        console.log(`Fetched ${responseData.data?.length || 0} active projects`);
+        responseData = { data: allProjects, baseUrl };
         break;
       }
 
@@ -107,7 +153,7 @@ serve(async (req) => {
           throw new Error('projectId is required for getShots');
         }
         
-        console.log(`Fetching shots for project ${projectId}...`);
+        console.log(`Fetching all shots for project ${projectId}...`);
         const shotsPayload = {
           filters: [["project", "is", { "type": "Project", "id": projectId }]],
           fields: [
@@ -116,28 +162,22 @@ serve(async (req) => {
             "sg_priority", "sg_notes_count", "sg_final_date", "due_date",
             "sg_bidding_status"
           ],
-          page: { size: 500 },
         };
 
-        const shotsResponse = await fetch(`${shotgridUrl}/api/v1/entity/shots/_search`, {
-          method: 'POST',
+        const allShots = await fetchAllPages(
+          `${shotgridUrl}/api/v1/entity/shots/_search`,
           headers,
-          body: JSON.stringify(shotsPayload),
-        });
-
-        if (!shotsResponse.ok) {
-          const errorText = await shotsResponse.text();
-          console.error('Failed to fetch shots:', errorText);
-          throw new Error(`Failed to fetch shots: ${errorText}`);
-        }
-
-        responseData = await shotsResponse.json();
-        console.log(`Fetched ${responseData.data?.length || 0} shots`);
+          shotsPayload,
+          'shots',
+          500
+        );
         
         // Log first shot to debug field names
-        if (responseData.data?.[0]) {
-          console.log('Sample shot attributes:', JSON.stringify(responseData.data[0].attributes));
+        if (allShots[0]) {
+          console.log('Sample shot attributes:', JSON.stringify(allShots[0].attributes));
         }
+        
+        responseData = { data: allShots };
         break;
       }
 
@@ -146,7 +186,7 @@ serve(async (req) => {
           throw new Error('projectId is required for getTasks');
         }
 
-        console.log(`Fetching tasks for project ${projectId}...`);
+        console.log(`Fetching all tasks for project ${projectId}...`);
         const tasksPayload = {
           filters: [["project", "is", { "type": "Project", "id": projectId }]],
           fields: [
@@ -154,34 +194,28 @@ serve(async (req) => {
             "step", "est_in_mins", "start_date", "due_date",
             "time_logs_sum", "updated_at"
           ],
-          page: { size: 1000 },
         };
 
-        const tasksResponse = await fetch(`${shotgridUrl}/api/v1/entity/tasks/_search`, {
-          method: 'POST',
+        const allTasks = await fetchAllPages(
+          `${shotgridUrl}/api/v1/entity/tasks/_search`,
           headers,
-          body: JSON.stringify(tasksPayload),
-        });
-
-        if (!tasksResponse.ok) {
-          const errorText = await tasksResponse.text();
-          console.error('Failed to fetch tasks:', errorText);
-          throw new Error(`Failed to fetch tasks: ${errorText}`);
-        }
-
-        responseData = await tasksResponse.json();
-        console.log(`Fetched ${responseData.data?.length || 0} tasks`);
+          tasksPayload,
+          'tasks',
+          500
+        );
         
         // Log sample task to debug field names
-        if (responseData.data?.[0]) {
-          console.log('Sample task full data:', JSON.stringify(responseData.data[0]));
+        if (allTasks[0]) {
+          console.log('Sample task full data:', JSON.stringify(allTasks[0]));
         }
         
         // Log tasks with bid/logged time
-        const tasksWithBid = responseData.data?.filter((t: any) => t.attributes.est_in_mins > 0) || [];
-        const tasksWithTime = responseData.data?.filter((t: any) => t.attributes.time_logs_sum > 0) || [];
-        const tasksWithEntity = responseData.data?.filter((t: any) => t.relationships?.entity?.data) || [];
+        const tasksWithBid = allTasks.filter((t: any) => t.attributes.est_in_mins > 0);
+        const tasksWithTime = allTasks.filter((t: any) => t.attributes.time_logs_sum > 0);
+        const tasksWithEntity = allTasks.filter((t: any) => t.relationships?.entity?.data);
         console.log(`Tasks with est_in_mins: ${tasksWithBid.length}, Tasks with time_logs_sum: ${tasksWithTime.length}, Tasks with entity: ${tasksWithEntity.length}`);
+        
+        responseData = { data: allTasks };
         break;
       }
 
@@ -190,23 +224,17 @@ serve(async (req) => {
         const artistsPayload = {
           filters: [["sg_status_list", "is", "act"]],
           fields: ["name", "department", "image", "email"],
-          page: { size: 200 },
         };
 
-        const artistsResponse = await fetch(`${shotgridUrl}/api/v1/entity/human_users/_search`, {
-          method: 'POST',
+        const allArtists = await fetchAllPages(
+          `${shotgridUrl}/api/v1/entity/human_users/_search`,
           headers,
-          body: JSON.stringify(artistsPayload),
-        });
-
-        if (!artistsResponse.ok) {
-          const errorText = await artistsResponse.text();
-          console.error('Failed to fetch artists:', errorText);
-          throw new Error(`Failed to fetch artists: ${errorText}`);
-        }
-
-        responseData = await artistsResponse.json();
-        console.log(`Fetched ${responseData.data?.length || 0} artists`);
+          artistsPayload,
+          'artists',
+          200
+        );
+        
+        responseData = { data: allArtists };
         break;
       }
 
