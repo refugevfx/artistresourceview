@@ -17,7 +17,7 @@ interface ShotGridShot {
     code: string;
     sg_status_list?: string;
     sg_shot_type?: string;
-    sg_bid_status?: string;
+    sg_bidding_status?: string;
     sg_priority?: string;
     sg_notes_count?: number;
     sg_final_date?: string;
@@ -211,7 +211,7 @@ export const useShotGridData = () => {
           code: sgShot.attributes.code,
           status: mapShotGridStatus(sgShot.attributes.sg_status_list),
           shotType: mapShotType(sgShot.attributes.sg_shot_type),
-          biddingStatus: mapBiddingStatus(sgShot.attributes.sg_bid_status),
+          biddingStatus: mapBiddingStatus(sgShot.attributes.sg_bidding_status),
           tasks,
           dueDate: sgShot.attributes.due_date || new Date().toISOString(),
           finalDate: sgShot.attributes.sg_final_date,
@@ -220,6 +220,14 @@ export const useShotGridData = () => {
           lastUpdate: sgShot.attributes.updated_at || new Date().toISOString(),
         };
       });
+
+      // Debug: log bidding status distribution
+      const biddingStatusCounts: Record<string, number> = {};
+      shots.forEach(shot => {
+        const status = shot.biddingStatus || 'undefined';
+        biddingStatusCounts[status] = (biddingStatusCounts[status] || 0) + 1;
+      });
+      console.log('Bidding status distribution:', biddingStatusCounts);
 
       // Calculate artist stats from tasks
       const artistStats: Record<string, { 
