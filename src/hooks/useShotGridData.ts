@@ -109,6 +109,12 @@ const mapBiddingStatus = (status: string | undefined): BiddingStatus | undefined
   return undefined;
 };
 
+// Read project ID from URL synchronously (before any renders)
+const getInitialProjectFromUrl = (): string | null => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('project');
+};
+
 export const useShotGridData = () => {
   const [projects, setProjects] = useState<Array<{ id: string; name: string; client: string; folderPrefix?: string }>>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -116,16 +122,7 @@ export const useShotGridData = () => {
   const [shotGridBaseUrl, setShotGridBaseUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [initialProjectFromUrl, setInitialProjectFromUrl] = useState<string | null>(null);
-
-  // Read project ID from URL parameter on initial load
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const projectParam = params.get('project');
-    if (projectParam) {
-      setInitialProjectFromUrl(projectParam);
-    }
-  }, []);
+  const [hasSetInitialProject, setHasSetInitialProject] = useState(false);
 
   // Fetch projects from ShotGrid
   const fetchProjects = useCallback(async () => {
@@ -159,11 +156,12 @@ export const useShotGridData = () => {
 
       setProjects(mappedProjects);
       
-      // Use URL parameter if provided, otherwise default to first project
-      if (mappedProjects.length > 0 && !selectedProjectId) {
-        const urlProject = initialProjectFromUrl;
+      // Only set initial project once, using URL parameter if valid
+      if (mappedProjects.length > 0 && !hasSetInitialProject) {
+        const urlProject = getInitialProjectFromUrl();
         const validProject = urlProject && mappedProjects.some(p => p.id === urlProject);
         setSelectedProjectId(validProject ? urlProject : mappedProjects[0].id);
+        setHasSetInitialProject(true);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch projects';
@@ -172,7 +170,7 @@ export const useShotGridData = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedProjectId, initialProjectFromUrl]);
+  }, [hasSetInitialProject]);
 
   // Fetch project details (shots, tasks, artists)
   const fetchProjectData = useCallback(async (projectId: string) => {
