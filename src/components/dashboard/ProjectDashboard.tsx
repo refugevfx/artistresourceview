@@ -276,12 +276,7 @@ export const ProjectDashboard = () => {
               <span className="text-[9px] text-muted-foreground mt-1">Pipeline</span>
             </div>
             <div className="flex flex-col items-center">
-              <BudgetHealthDonut 
-                totalShots={filteredShots.length} 
-                redCount={redShots.length} 
-                orangeCount={orangeShots.length} 
-                compact 
-              />
+              <BudgetHealthDonut shots={filteredShots} compact />
               <span className="text-[9px] text-muted-foreground mt-1">Budget</span>
             </div>
           </div>
