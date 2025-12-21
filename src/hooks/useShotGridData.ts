@@ -51,20 +51,20 @@ interface ShotGridArtist {
   };
 }
 
-// Map ShotGrid status codes to our status codes
+// Map ShotGrid status codes to our status codes (exact match from ShotGrid)
 const mapShotGridStatus = (status: string | undefined): ShotStatus => {
   const statusMap: Record<string, ShotStatus> = {
     'wtg': 'wtg',
     'rdy': 'rdy',
     'ip': 'ip',
     'rev': 'rev',
-    'ncl': 'n_cl',
+    'n_cl': 'n_cl',
     'apr': 'apr',
-    'clip': 'cl_ip',
-    'clrev': 'cl_rev',
-    'clnr': 'cl_nr',
-    'clapr': 'cl_apr',
-    'finr': 'fi_nr',
+    'cl_ip': 'cl_ip',
+    'cl_rev': 'cl_rev',
+    'cl_nr': 'cl_nr',
+    'cl_apr': 'cl_apr',
+    'fi_nr': 'fi_nr',
     'fin': 'fin',
     'awtg': 'awtg',
     'hld': 'hld',
@@ -72,7 +72,7 @@ const mapShotGridStatus = (status: string | undefined): ShotStatus => {
     'omt': 'omt',
     'bid': 'bid',
   };
-  return statusMap[status?.toLowerCase() || ''] || 'wtg';
+  return statusMap[status || ''] || 'wtg';
 };
 
 const mapShotType = (type: string | undefined): ShotType => {
