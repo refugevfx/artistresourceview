@@ -133,7 +133,7 @@ serve(async (req) => {
         console.log('Fetching active projects from ShotGrid...');
         const projectsPayload = {
           filters: [["sg_status", "is", "Active"]],
-          fields: ["name", "sg_status", "code"],
+          fields: ["name", "sg_status", "code", "sg_folder_prefix"],
         };
 
         const allProjects = await fetchAllPages(
@@ -143,6 +143,11 @@ serve(async (req) => {
           'projects',
           100
         );
+        
+        // Log sample project to debug
+        if (allProjects[0]) {
+          console.log('Sample project attributes:', JSON.stringify(allProjects[0].attributes));
+        }
         
         responseData = { data: allProjects, baseUrl };
         break;
