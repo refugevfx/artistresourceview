@@ -1,27 +1,37 @@
 import { useMemo } from 'react';
+import { Shot } from '@/types/project';
+import { getRedShots, getOrangeShots } from '@/data/mockProjectData';
 
 interface BudgetHealthDonutProps {
-  totalShots: number;
-  redCount: number;
-  orangeCount: number;
+  shots: Shot[];
   compact?: boolean;
 }
 
 export const BudgetHealthDonut = ({ 
-  totalShots, 
-  redCount, 
-  orangeCount, 
+  shots, 
   compact = false 
 }: BudgetHealthDonutProps) => {
-  const healthyCount = totalShots - redCount - orangeCount;
-  
-  const groups = useMemo(() => {
-    return [
-      { label: 'Healthy', count: healthyCount, color: 'hsl(var(--success))' },
-      { label: 'Orange', count: orangeCount, color: 'hsl(var(--warning))' },
-      { label: 'Red', count: redCount, color: 'hsl(var(--destructive))' },
-    ].filter(g => g.count > 0);
-  }, [healthyCount, orangeCount, redCount]);
+  const { groups, healthyCount, total } = useMemo(() => {
+    const redShots = getRedShots(shots);
+    const orangeShots = getOrangeShots(shots);
+    
+    // Get unique warning shot IDs (avoid double-counting)
+    const redIds = new Set(redShots.map(s => s.id));
+    const orangeOnlyCount = orangeShots.filter(s => !redIds.has(s.id)).length;
+    
+    const warningCount = redShots.length + orangeOnlyCount;
+    const healthy = shots.length - warningCount;
+    
+    return {
+      groups: [
+        { label: 'OK', count: healthy, color: 'hsl(var(--success))' },
+        { label: 'Orange', count: orangeOnlyCount, color: 'hsl(var(--warning))' },
+        { label: 'Red', count: redShots.length, color: 'hsl(var(--destructive))' },
+      ].filter(g => g.count > 0),
+      healthyCount: healthy,
+      total: shots.length,
+    };
+  }, [shots]);
 
   const size = compact ? 70 : 120;
   const strokeWidth = compact ? 10 : 16;
@@ -35,7 +45,7 @@ export const BudgetHealthDonut = ({
       <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="transform -rotate-90">
           {groups.map((group) => {
-            const percentage = group.count / totalShots;
+            const percentage = group.count / total;
             const strokeDasharray = `${percentage * circumference} ${circumference}`;
             const strokeDashoffset = -currentOffset;
             currentOffset += percentage * circumference;
@@ -58,7 +68,7 @@ export const BudgetHealthDonut = ({
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className={`font-bold text-foreground ${compact ? 'text-sm' : 'text-2xl'}`}>
-            {Math.round((healthyCount / totalShots) * 100)}%
+            {total > 0 ? Math.round((healthyCount / total) * 100) : 0}%
           </span>
           {!compact && <span className="text-xs text-muted-foreground">healthy</span>}
         </div>
