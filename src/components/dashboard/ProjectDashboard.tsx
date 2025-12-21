@@ -27,6 +27,7 @@ import {
 
 export const ProjectDashboard = () => {
   const [selectedBiddingStatuses, setSelectedBiddingStatuses] = useState<BiddingStatus[]>(['bda']);
+  const [selectedEpisode, setSelectedEpisode] = useState<string | null>(null); // null = whole project
   
   const {
     projects,
@@ -39,14 +40,35 @@ export const ProjectDashboard = () => {
     refresh,
   } = useShotGridData();
 
-  // Filter shots based on selected bidding statuses
+  // Extract unique episodes from shot codes (e.g., "101_0010" -> "101")
+  const episodes = useMemo(() => {
+    if (!project) return [];
+    const episodeSet = new Set<string>();
+    project.shots.forEach(shot => {
+      const match = shot.code.match(/^(\d+)_/);
+      if (match) {
+        episodeSet.add(match[1]);
+      }
+    });
+    return Array.from(episodeSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  }, [project]);
+
+  // Filter shots based on selected bidding statuses AND episode
   const filteredShots = useMemo(() => {
     if (!project) return [];
-    if (selectedBiddingStatuses.length === 0) return project.shots;
-    return project.shots.filter(shot => 
+    let shots = project.shots;
+    
+    // Filter by episode first
+    if (selectedEpisode) {
+      shots = shots.filter(shot => shot.code.startsWith(`${selectedEpisode}_`));
+    }
+    
+    // Then filter by bidding status
+    if (selectedBiddingStatuses.length === 0) return shots;
+    return shots.filter(shot => 
       shot.biddingStatus && selectedBiddingStatuses.includes(shot.biddingStatus)
     );
-  }, [project, selectedBiddingStatuses]);
+  }, [project, selectedBiddingStatuses, selectedEpisode]);
 
   const toggleBiddingStatus = (status: BiddingStatus) => {
     setSelectedBiddingStatuses(prev => 
@@ -140,6 +162,34 @@ export const ProjectDashboard = () => {
                     <div className="font-medium text-sm">{p.name}</div>
                     <div className="text-[10px] text-muted-foreground">{p.client}</div>
                   </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Episode Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 px-2 py-1 text-[10px] bg-secondary hover:bg-accent rounded transition-colors">
+              <span className="font-medium">
+                {selectedEpisode ? `Ep ${selectedEpisode}` : 'All Episodes'}
+              </span>
+              <ChevronDown className="w-2.5 h-2.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="bg-popover border-border z-50 min-w-[120px]">
+              <DropdownMenuItem 
+                onClick={() => setSelectedEpisode(null)} 
+                className={`text-xs ${!selectedEpisode ? 'bg-accent' : ''}`}
+              >
+                All Episodes
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {episodes.map((ep) => (
+                <DropdownMenuItem
+                  key={ep}
+                  onClick={() => setSelectedEpisode(ep)}
+                  className={`text-xs ${selectedEpisode === ep ? 'bg-accent' : ''}`}
+                >
+                  Episode {ep}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
