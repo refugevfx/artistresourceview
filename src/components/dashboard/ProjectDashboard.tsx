@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useShotGridData } from '@/hooks/useShotGridData';
 import { getRedShots, getOrangeShots } from '@/data/mockProjectData';
 import { StatusDonut } from './StatusDonut';
+import { BudgetHealthDonut } from './BudgetHealthDonut';
 import { AlertCard } from './AlertCard';
 import { DeadlineCounter } from './DeadlineCounter';
 import { ArtistWorkload } from './ArtistWorkload';
@@ -269,7 +270,21 @@ export const ProjectDashboard = () => {
           compact
           tooltip="Shot status distribution across the project. Shows how many shots are in each pipeline stage."
         >
-          <StatusDonut shots={filteredShots} compact />
+          <div className="flex gap-4">
+            <div className="flex flex-col items-center">
+              <StatusDonut shots={filteredShots} compact />
+              <span className="text-[9px] text-muted-foreground mt-1">Pipeline</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <BudgetHealthDonut 
+                totalShots={filteredShots.length} 
+                redCount={redShots.length} 
+                orangeCount={orangeShots.length} 
+                compact 
+              />
+              <span className="text-[9px] text-muted-foreground mt-1">Budget</span>
+            </div>
+          </div>
         </AlertCard>
 
         {/* Budget Warnings */}
