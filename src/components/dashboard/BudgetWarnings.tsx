@@ -1,94 +1,104 @@
 import { Shot } from '@/types/project';
-import { getShotsOverBudget, getTasksOverBid } from '@/data/mockProjectData';
+import { getOrangeShots, getRedShots, getShotsMissingFinalDate, getBidShotsWithTime } from '@/data/mockProjectData';
 import { cn } from '@/lib/utils';
-import { TrendingUp, Clock } from 'lucide-react';
+import { AlertTriangle, Circle, Calendar, DollarSign } from 'lucide-react';
 
 interface BudgetWarningsProps {
   shots: Shot[];
 }
 
 export const BudgetWarnings = ({ shots }: BudgetWarningsProps) => {
-  const shotsOverBudget = getShotsOverBudget(shots).slice(0, 3);
-  const tasksOverBid = getTasksOverBid(shots).slice(0, 3);
+  const redShots = getRedShots(shots);
+  const orangeShots = getOrangeShots(shots).filter(
+    s => !redShots.some(r => r.id === s.id) // Exclude already red shots
+  );
+  const missingFinal = getShotsMissingFinalDate(shots);
+  const bidWithTime = getBidShotsWithTime(shots);
 
-  if (shotsOverBudget.length === 0 && tasksOverBid.length === 0) {
+  const totalIssues = redShots.length + orangeShots.length + missingFinal.length + bidWithTime.length;
+
+  if (totalIssues === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-success">
+      <div className="flex items-center justify-center py-3 text-success">
         <div className="text-center">
-          <div className="text-2xl mb-1">✓</div>
-          <p className="text-sm">All shots within budget</p>
+          <div className="text-lg mb-0.5">✓</div>
+          <p className="text-xs">All clear</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {/* Shots over total budget */}
-      {shotsOverBudget.length > 0 && (
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wide">
-            <TrendingUp className="w-3 h-3" />
-            Shot Budget Exceeded
+    <div className="space-y-2 text-xs">
+      {/* Red Shots - Total over budget */}
+      {redShots.length > 0 && (
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-destructive font-medium">
+            <Circle className="w-2.5 h-2.5 fill-destructive" />
+            Red Shots ({redShots.length})
           </div>
-          {shotsOverBudget.map((shot, idx) => (
-            <div 
-              key={shot.id}
-              className={cn(
-                'flex items-center justify-between p-2 rounded-md border slide-in',
-                shot.overagePercent > 50 
-                  ? 'border-destructive/40 bg-destructive/5' 
-                  : 'border-warning/30 bg-warning/5'
-              )}
-              style={{ animationDelay: `${idx * 50}ms` }}
-            >
-              <div className="flex items-center gap-2">
-                <code className="text-xs font-mono text-foreground">{shot.code}</code>
-                <span className="text-xs text-muted-foreground">
-                  {shot.totalLogged}h / {shot.totalBid}h bid
-                </span>
-              </div>
-              <span className={cn(
-                'text-xs font-mono font-semibold px-1.5 py-0.5 rounded',
-                shot.overagePercent > 50 
-                  ? 'bg-destructive/20 text-destructive' 
-                  : 'bg-warning/20 text-warning'
-              )}>
-                +{shot.overagePercent}%
+          <div className="flex flex-wrap gap-1">
+            {redShots.slice(0, 4).map((shot) => (
+              <span 
+                key={shot.id}
+                className="px-1.5 py-0.5 rounded bg-destructive/15 text-destructive font-mono text-[10px]"
+                title={`${shot.totalLogged}h / ${shot.totalBid}h (+${shot.overagePercent}%)`}
+              >
+                {shot.code.split('_')[1]} +{shot.overagePercent}%
               </span>
-            </div>
-          ))}
+            ))}
+            {redShots.length > 4 && (
+              <span className="px-1.5 py-0.5 text-destructive text-[10px]">
+                +{redShots.length - 4} more
+              </span>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Individual tasks over bid */}
-      {tasksOverBid.length > 0 && (
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wide">
-            <Clock className="w-3 h-3" />
-            Tasks Over Bid
+      {/* Orange Shots - Task over bid */}
+      {orangeShots.length > 0 && (
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-warning font-medium">
+            <Circle className="w-2.5 h-2.5 fill-warning" />
+            Orange Shots ({orangeShots.length})
           </div>
-          {tasksOverBid.map((task, idx) => (
-            <div 
-              key={task.id}
-              className="flex items-center justify-between p-2 rounded-md border border-primary/20 bg-primary/5 slide-in"
-              style={{ animationDelay: `${(shotsOverBudget.length + idx) * 50}ms` }}
-            >
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5">
-                  <code className="text-xs font-mono text-foreground">{task.shotCode}</code>
-                  <span className="text-xs text-muted-foreground">·</span>
-                  <span className="text-xs text-muted-foreground">{task.name}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {task.assignee} · {task.loggedHours}h / {task.bidHours}h
-                </span>
-              </div>
-              <span className="text-xs font-mono font-medium text-primary px-1.5 py-0.5 rounded bg-primary/10">
-                +{task.overageHours}h
+          <div className="flex flex-wrap gap-1">
+            {orangeShots.slice(0, 4).map((shot) => (
+              <span 
+                key={shot.id}
+                className="px-1.5 py-0.5 rounded bg-warning/15 text-warning font-mono text-[10px]"
+                title={`${shot.overTaskCount} task(s) over bid`}
+              >
+                {shot.code.split('_')[1]}
               </span>
-            </div>
-          ))}
+            ))}
+            {orangeShots.length > 4 && (
+              <span className="px-1.5 py-0.5 text-warning text-[10px]">
+                +{orangeShots.length - 4} more
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Missing Final Date */}
+      {missingFinal.length > 0 && (
+        <div className="flex items-center gap-1.5 p-1.5 rounded bg-muted/50 border border-border">
+          <Calendar className="w-3 h-3 text-muted-foreground" />
+          <span className="text-muted-foreground">
+            {missingFinal.length} final shot{missingFinal.length !== 1 ? 's' : ''} missing date
+          </span>
+        </div>
+      )}
+
+      {/* Bid shots with logged time */}
+      {bidWithTime.length > 0 && (
+        <div className="flex items-center gap-1.5 p-1.5 rounded bg-primary/10 border border-primary/20">
+          <DollarSign className="w-3 h-3 text-primary" />
+          <span className="text-primary">
+            {bidWithTime.length} unawarded shot{bidWithTime.length !== 1 ? 's' : ''} with logged time
+          </span>
         </div>
       )}
     </div>

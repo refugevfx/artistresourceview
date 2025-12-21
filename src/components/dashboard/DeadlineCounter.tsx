@@ -3,9 +3,10 @@ import { cn } from '@/lib/utils';
 
 interface DeadlineCounterProps {
   deadline: string;
+  compact?: boolean;
 }
 
-export const DeadlineCounter = ({ deadline }: DeadlineCounterProps) => {
+export const DeadlineCounter = ({ deadline, compact = false }: DeadlineCounterProps) => {
   const deadlineDate = new Date(deadline);
   const now = new Date();
   const diffTime = deadlineDate.getTime() - now.getTime();
@@ -16,18 +17,33 @@ export const DeadlineCounter = ({ deadline }: DeadlineCounterProps) => {
   const isOverdue = diffDays < 0;
 
   const getSeverityClass = () => {
-    if (isOverdue) return 'text-destructive glow-destructive';
-    if (isCritical) return 'text-destructive glow-destructive status-pulse';
-    if (isUrgent) return 'text-warning glow-warning';
-    return 'text-primary glow-primary';
+    if (isOverdue) return 'text-destructive';
+    if (isCritical) return 'text-destructive';
+    if (isUrgent) return 'text-warning';
+    return 'text-primary';
   };
 
   const getLabel = () => {
-    if (isOverdue) return 'OVERDUE';
+    if (isOverdue) return 'LATE';
     if (diffDays === 0) return 'TODAY';
-    if (diffDays === 1) return 'TOMORROW';
-    return 'DAYS LEFT';
+    if (diffDays === 1) return 'TMRW';
+    return 'DAYS';
   };
+
+  if (compact) {
+    return (
+      <div className={cn(
+        'flex items-center gap-2 px-2 py-1 rounded-md border border-border bg-card/50',
+        getSeverityClass()
+      )}>
+        <Calendar className="w-3 h-3" />
+        <span className={cn('text-lg font-mono font-bold', getSeverityClass())}>
+          {Math.abs(diffDays)}
+        </span>
+        <span className="text-[10px] uppercase opacity-70">{getLabel()}</span>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(
