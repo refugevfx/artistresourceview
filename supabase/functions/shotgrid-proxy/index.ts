@@ -74,9 +74,17 @@ serve(async (req) => {
 
     switch (action) {
       case 'getProjects': {
-        console.log('Fetching projects from ShotGrid...');
-        const projectsResponse = await fetch(`${shotgridUrl}/api/v1/entity/projects?fields=name,sg_status,code`, {
+        console.log('Fetching active projects from ShotGrid...');
+        const projectsPayload = {
+          filters: [["sg_status", "is", "Active"]],
+          fields: ["name", "sg_status", "code"],
+          page: { size: 100 },
+        };
+
+        const projectsResponse = await fetch(`${shotgridUrl}/api/v1/entity/projects/_search`, {
+          method: 'POST',
           headers,
+          body: JSON.stringify(projectsPayload),
         });
         
         if (!projectsResponse.ok) {
@@ -86,7 +94,7 @@ serve(async (req) => {
         }
         
         responseData = await projectsResponse.json();
-        console.log(`Fetched ${responseData.data?.length || 0} projects`);
+        console.log(`Fetched ${responseData.data?.length || 0} active projects`);
         break;
       }
 
