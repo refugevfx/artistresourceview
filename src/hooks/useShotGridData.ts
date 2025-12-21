@@ -35,9 +35,8 @@ interface ShotGridTask {
     entity?: { id: number; type: string };
     task_assignees?: Array<{ id: number; name: string }>;
     step?: { name: string };
-    bid_duration?: number; // minutes
-    duration?: number; // minutes
-    time_logs_sum?: number; // minutes
+    est_in_mins?: number; // bid in minutes
+    time_logs_sum?: number; // logged time in minutes
     start_date?: string;
     due_date?: string;
   };
@@ -200,7 +199,7 @@ export const useShotGridData = () => {
           department: t.attributes.step?.name || 'General',
           assignee: t.attributes.task_assignees?.[0]?.name || 'Unassigned',
           status: mapShotGridStatus(t.attributes.sg_status_list),
-          bidHours: (t.attributes.bid_duration || 0) / 60,
+          bidHours: (t.attributes.est_in_mins || 0) / 60,
           loggedHours: (t.attributes.time_logs_sum || 0) / 60,
           startDate: t.attributes.start_date,
           dueDate: t.attributes.due_date || new Date().toISOString(),
@@ -261,7 +260,7 @@ export const useShotGridData = () => {
             artistStats[assignee.name].activeTasks++;
           }
           
-          artistStats[assignee.name].bidHours += (task.attributes.bid_duration || 0) / 60;
+          artistStats[assignee.name].bidHours += (task.attributes.est_in_mins || 0) / 60;
           artistStats[assignee.name].loggedHours += (task.attributes.time_logs_sum || 0) / 60;
         });
       });

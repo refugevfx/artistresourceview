@@ -147,7 +147,7 @@ serve(async (req) => {
           filters: [["project", "is", { "type": "Project", "id": projectId }]],
           fields: [
             "content", "sg_status_list", "entity", "task_assignees",
-            "step", "bid_duration", "duration", "start_date", "due_date",
+            "step", "est_in_mins", "start_date", "due_date",
             "time_logs_sum", "updated_at"
           ],
           page: { size: 1000 },
