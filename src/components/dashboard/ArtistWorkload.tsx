@@ -1,6 +1,7 @@
 import { Artist } from '@/types/project';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ArtistWorkloadProps {
   artists: Artist[];
@@ -35,12 +36,23 @@ export const ArtistWorkload = ({ artists, compact = false }: ArtistWorkloadProps
             </div>
             <div className="flex flex-wrap gap-1">
               {onTrack.slice(0, 4).map((artist) => (
-                <span 
-                  key={artist.id}
-                  className="px-1.5 py-0.5 rounded bg-success/10 text-success font-mono text-[10px]"
-                >
-                  {artist.name.split(' ')[0]} {artist.efficiency}%
-                </span>
+                <TooltipProvider key={artist.id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="px-1.5 py-0.5 rounded bg-success/10 text-success font-mono text-[10px] cursor-help">
+                        {artist.name.split(' ')[0]} {artist.efficiency}%
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px]">
+                      <p className="font-medium">{artist.name}</p>
+                      <p className="text-xs text-muted-foreground">{artist.department}</p>
+                      <p className="text-xs mt-1">
+                        {artist.totalLoggedHours}h logged / {artist.totalBidHours}h bid
+                      </p>
+                      <p className="text-xs text-success">On track - within budget</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               ))}
               {onTrack.length > 4 && (
                 <span className="px-1.5 py-0.5 text-muted-foreground text-[10px]">
@@ -61,15 +73,33 @@ export const ArtistWorkload = ({ artists, compact = false }: ArtistWorkloadProps
             </div>
             <div className="flex flex-wrap gap-1">
               {behind.slice(0, 4).map((artist) => (
-                <span 
-                  key={artist.id}
-                  className={cn(
-                    'px-1.5 py-0.5 rounded font-mono text-[10px]',
-                    artist.efficiency > 150 ? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning'
-                  )}
-                >
-                  {artist.name.split(' ')[0]} {artist.efficiency}%
-                </span>
+                <TooltipProvider key={artist.id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span 
+                        className={cn(
+                          'px-1.5 py-0.5 rounded font-mono text-[10px] cursor-help',
+                          artist.efficiency > 150 ? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning'
+                        )}
+                      >
+                        {artist.name.split(' ')[0]} {artist.efficiency}%
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px]">
+                      <p className="font-medium">{artist.name}</p>
+                      <p className="text-xs text-muted-foreground">{artist.department}</p>
+                      <p className="text-xs mt-1">
+                        {artist.totalLoggedHours}h logged / {artist.totalBidHours}h bid
+                      </p>
+                      <p className={cn(
+                        'text-xs',
+                        artist.efficiency > 150 ? 'text-destructive' : 'text-warning'
+                      )}>
+                        {artist.efficiency > 150 ? 'Significantly over budget' : 'Over budget'}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               ))}
               {behind.length > 4 && (
                 <span className="px-1.5 py-0.5 text-muted-foreground text-[10px]">
