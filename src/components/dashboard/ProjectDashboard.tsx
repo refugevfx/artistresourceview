@@ -371,6 +371,7 @@ export const ProjectDashboard = () => {
           shots={filteredShots}
           clientApprovedCount={filteredShots.filter(s => ['fin', 'cl_apr'].includes(s.status)).length}
           clientPendingCount={filteredShots.filter(s => s.status === 'cl_rev').length}
+          shotGridBaseUrl={shotGridBaseUrl}
           compact
           />
         </AlertCard>

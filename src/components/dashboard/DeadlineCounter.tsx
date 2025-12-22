@@ -31,6 +31,11 @@ export const DeadlineCounter = ({ deadline, compact = false }: DeadlineCounterPr
   };
 
   if (compact) {
+    // Hide "0 Today" since date is shown elsewhere
+    if (diffDays === 0) {
+      return null;
+    }
+    
     return (
       <div className={cn(
         'flex items-center gap-2 px-2 py-1 rounded-md border border-border bg-card/50',

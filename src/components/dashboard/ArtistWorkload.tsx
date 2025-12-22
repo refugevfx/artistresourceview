@@ -85,17 +85,23 @@ export const ArtistWorkload = ({ artists, compact = false }: ArtistWorkloadProps
                         {artist.name.split(' ')[0]} {artist.efficiency}%
                       </span>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[200px]">
+                    <TooltipContent side="top" className="max-w-[240px]">
                       <p className="font-medium">{artist.name}</p>
                       <p className="text-xs text-muted-foreground">{artist.department}</p>
                       <p className="text-xs mt-1">
-                        {artist.totalLoggedHours}h logged / {artist.totalBidHours}h bid
+                        {Math.round(artist.totalLoggedHours)}h logged / {Math.round(artist.totalBidHours)}h bid
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        <strong>{artist.efficiency}%</strong> = logged hours as a percentage of bid hours.
+                        {artist.efficiency > 150 
+                          ? " This artist has used 50%+ more time than budgeted." 
+                          : ` This artist is ${artist.efficiency - 100}% over their allocated time.`}
                       </p>
                       <p className={cn(
-                        'text-xs',
+                        'text-xs mt-1',
                         artist.efficiency > 150 ? 'text-destructive' : 'text-warning'
                       )}>
-                        {artist.efficiency > 150 ? 'Significantly over budget' : 'Over budget'}
+                        {artist.efficiency > 150 ? 'Significantly over budget - may need support' : 'Over budget - monitor workload'}
                       </p>
                     </TooltipContent>
                   </Tooltip>

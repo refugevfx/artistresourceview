@@ -1,19 +1,26 @@
 import { Shot, getStatusConfig } from '@/types/project';
-import { Star, Circle } from 'lucide-react';
+import { Star, Circle, ExternalLink } from 'lucide-react';
 import { TimeComparisonBar } from './TimeComparisonBar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface CelebrationsProps {
   shots: Shot[];
   clientApprovedCount: number;
   clientPendingCount: number;
+  shotGridBaseUrl?: string | null;
   compact?: boolean;
 }
 
-export const Celebrations = ({ shots, clientApprovedCount, clientPendingCount, compact = false }: CelebrationsProps) => {
+export const Celebrations = ({ shots, clientApprovedCount, clientPendingCount, shotGridBaseUrl, compact = false }: CelebrationsProps) => {
   const recentApprovals = shots
     .filter(s => ['apr', 'cl_apr', 'fin'].includes(s.status))
     .sort((a, b) => new Date(b.lastUpdate).getTime() - new Date(a.lastUpdate).getTime())
     .slice(0, compact ? 3 : 4);
+
+  const getShotGridUrl = (shotId: string) => {
+    if (!shotGridBaseUrl) return null;
+    return `${shotGridBaseUrl}/detail/Shot/${shotId}`;
+  };
 
   if (compact) {
     return (
@@ -42,14 +49,40 @@ export const Celebrations = ({ shots, clientApprovedCount, clientPendingCount, c
         {/* Recent */}
         {recentApprovals.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {recentApprovals.map((shot) => (
-              <span 
-                key={shot.id}
-                className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-mono text-[10px]"
-              >
-                {shot.code.split('_')[1]}
-              </span>
-            ))}
+            {recentApprovals.map((shot) => {
+              const shotUrl = getShotGridUrl(shot.id);
+              const statusConfig = getStatusConfig(shot.status);
+              return (
+                <TooltipProvider key={shot.id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-mono text-[10px] cursor-help">
+                        {shot.code}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[220px]">
+                      <p className="font-medium">{shot.code}</p>
+                      <p className="text-xs text-muted-foreground">{statusConfig.label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Updated: {new Date(shot.lastUpdate).toLocaleDateString()}
+                      </p>
+                      {shotUrl && (
+                        <a 
+                          href={shotUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Open in ShotGrid
+                        </a>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })}
           </div>
         )}
       </div>
