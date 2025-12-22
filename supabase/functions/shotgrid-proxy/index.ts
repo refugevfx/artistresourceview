@@ -251,6 +251,36 @@ serve(async (req) => {
         break;
       }
 
+      case 'getProjectById': {
+        if (!projectId) {
+          throw new Error('projectId is required for getProjectById');
+        }
+        
+        console.log(`Fetching single project ${projectId} from ShotGrid...`);
+        const projectPayload = {
+          filters: [["id", "is", projectId]],
+          fields: ["name", "sg_status", "code", "sg_folder_prefix"],
+        };
+
+        const response = await fetch(`${shotgridUrl}/api/v1/entity/projects/_search`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ ...projectPayload, page: { size: 1, number: 1 } }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to fetch project: ${errorText}`);
+        }
+
+        const data = await response.json();
+        const project = data.data?.[0] || null;
+        
+        console.log('Fetched project:', project ? project.attributes.name : 'not found');
+        responseData = { data: project, baseUrl };
+        break;
+      }
+
       default:
         throw new Error(`Unknown action: ${action}`);
     }

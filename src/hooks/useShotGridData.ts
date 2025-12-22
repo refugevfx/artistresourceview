@@ -124,7 +124,7 @@ export const useShotGridData = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasSetInitialProject, setHasSetInitialProject] = useState(false);
 
-  // Fetch projects from ShotGrid
+  // Fetch projects from ShotGrid (only active ones for dropdown)
   const fetchProjects = useCallback(async () => {
     try {
       setLoading(true);
@@ -156,11 +156,17 @@ export const useShotGridData = () => {
 
       setProjects(mappedProjects);
       
-      // Only set initial project once, using URL parameter if valid
-      if (mappedProjects.length > 0 && !hasSetInitialProject) {
+      // Only set initial project once
+      if (!hasSetInitialProject) {
         const urlProject = getInitialProjectFromUrl();
-        const validProject = urlProject && mappedProjects.some(p => p.id === urlProject);
-        setSelectedProjectId(validProject ? urlProject : mappedProjects[0].id);
+        
+        // If URL has a project param, use it regardless of whether it's in the active list
+        if (urlProject) {
+          setSelectedProjectId(urlProject);
+        } else if (mappedProjects.length > 0) {
+          // Otherwise default to first active project
+          setSelectedProjectId(mappedProjects[0].id);
+        }
         setHasSetInitialProject(true);
       }
     } catch (err) {
@@ -171,6 +177,31 @@ export const useShotGridData = () => {
       setLoading(false);
     }
   }, [hasSetInitialProject]);
+
+  // Fetch a single project's info by ID (for URL-based projects not in active list)
+  const fetchSingleProject = useCallback(async (projectId: string): Promise<{ name: string; client: string; folderPrefix?: string } | null> => {
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('shotgrid-proxy', {
+        body: { action: 'getProjectById', projectId: parseInt(projectId, 10) },
+      });
+      
+      if (fnError || data?.error) {
+        console.warn('Could not fetch project info for ID:', projectId);
+        return null;
+      }
+      
+      const p = data.data as ShotGridProject;
+      if (!p) return null;
+      
+      return {
+        name: p.attributes.name,
+        client: p.attributes.code || 'Unknown Client',
+        folderPrefix: p.attributes.sg_folder_prefix,
+      };
+    } catch {
+      return null;
+    }
+  }, []);
 
   // Fetch project details (shots, tasks, artists)
   const fetchProjectData = useCallback(async (projectId: string) => {
@@ -341,7 +372,16 @@ export const useShotGridData = () => {
       const clientPendingShots = shots.filter(s => 
         ['cl_ip', 'cl_rev'].includes(s.status)).length;
 
-      const projectInfo = projects.find(p => p.id === projectId);
+      // Try to get project info from the active projects list first
+      let projectInfo = projects.find(p => p.id === projectId);
+      
+      // If not in active list (e.g., accessed via URL param), fetch it directly
+      if (!projectInfo) {
+        const fetchedInfo = await fetchSingleProject(projectId);
+        if (fetchedInfo) {
+          projectInfo = { id: projectId, ...fetchedInfo };
+        }
+      }
       
       // Find latest due date across all shots
       const deadline = shots.length > 0
@@ -374,7 +414,7 @@ export const useShotGridData = () => {
     } finally {
       setLoading(false);
     }
-  }, [projects]);
+  }, [projects, fetchSingleProject]);
 
   // Initial fetch of projects
   useEffect(() => {
