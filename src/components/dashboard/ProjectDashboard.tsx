@@ -9,6 +9,7 @@ import { ArtistWorkload } from './ArtistWorkload';
 import { BudgetWarnings } from './BudgetWarnings';
 import { Celebrations } from './Celebrations';
 import { ShotTypeBreakdown } from './ShotTypeBreakdown';
+import { ShotTypeBar } from './ShotTypeBar';
 import { Clock, AlertTriangle, Users, Star, ChevronDown, RefreshCw, AlertCircle, Filter, HelpCircle } from 'lucide-react';
 import { BiddingStatus, BIDDING_STATUS_CONFIG } from '@/types/project';
 import {
@@ -320,7 +321,10 @@ export const ProjectDashboard = () => {
             style={{ width: `${Math.min(budgetUtilization, 100)}%` }}
           />
         </div>
-        <ShotTypeBreakdown shots={filteredShots} />
+        <div className="flex items-center gap-3">
+          <ShotTypeBreakdown shots={filteredShots} />
+          <ShotTypeBar shots={filteredShots} />
+        </div>
       </div>
 
       {/* Main Grid - responsive flow */}
