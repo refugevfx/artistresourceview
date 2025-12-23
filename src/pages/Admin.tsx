@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Shield, ShieldOff, Loader2, KeyRound } from 'lucide-react';
+import { ArrowLeft, Shield, ShieldOff, Loader2, KeyRound, UserCheck, UserX } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   Tooltip,
@@ -31,6 +31,7 @@ interface UserProfile {
   shotgrid_user_id: number | null;
   created_at: string;
   isAdmin: boolean;
+  is_approved: boolean;
 }
 
 export default function Admin() {
@@ -40,6 +41,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const [resettingPassword, setResettingPassword] = useState<string | null>(null);
+  const [approvingUser, setApprovingUser] = useState<string | null>(null);
 
   async function fetchUsers() {
     setLoading(true);
@@ -71,6 +73,7 @@ export default function Admin() {
     const usersWithRoles = profiles.map(p => ({
       ...p,
       isAdmin: adminUserIds.has(p.user_id),
+      is_approved: p.is_approved ?? false,
     }));
 
     setUsers(usersWithRoles);
@@ -113,6 +116,28 @@ export default function Admin() {
     }
 
     setUpdating(null);
+  }
+
+  async function toggleApproval(userId: string, currentlyApproved: boolean) {
+    setApprovingUser(userId);
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_approved: !currentlyApproved })
+      .eq('user_id', userId);
+
+    if (error) {
+      toast({ 
+        title: currentlyApproved ? 'Error revoking approval' : 'Error approving user', 
+        description: error.message, 
+        variant: 'destructive' 
+      });
+    } else {
+      toast({ title: currentlyApproved ? 'User approval revoked' : 'User approved' });
+      fetchUsers();
+    }
+
+    setApprovingUser(null);
   }
 
   async function resetUserPassword(email: string, userId: string) {
@@ -172,6 +197,7 @@ export default function Admin() {
                       <TableHead>ShotGrid Name</TableHead>
                       <TableHead>ShotGrid ID</TableHead>
                       <TableHead>Joined</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -184,6 +210,13 @@ export default function Admin() {
                         <TableCell>{user.shotgrid_user_id || '—'}</TableCell>
                         <TableCell>
                           {new Date(user.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          {user.is_approved ? (
+                            <Badge variant="default" className="bg-green-600">Approved</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-amber-600 border-amber-600">Pending</Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           {user.isAdmin ? (
@@ -211,6 +244,30 @@ export default function Admin() {
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p>Send password reset email</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant={user.is_approved ? 'outline' : 'default'}
+                                  size="sm"
+                                  disabled={approvingUser === user.user_id}
+                                  onClick={() => toggleApproval(user.user_id, user.is_approved)}
+                                  className={!user.is_approved ? 'bg-green-600 hover:bg-green-700' : ''}
+                                >
+                                  {approvingUser === user.user_id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : user.is_approved ? (
+                                    <UserX className="h-4 w-4" />
+                                  ) : (
+                                    <UserCheck className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{user.is_approved ? 'Revoke approval' : 'Approve user'}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
