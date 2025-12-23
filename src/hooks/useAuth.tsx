@@ -25,7 +25,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   // Track previous session to avoid redundant updates that cause re-renders
   const prevSessionRef = useRef<string | null>(null);
-  const refreshCleanupScheduledRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -35,28 +34,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!mounted) return;
-
-      // If the stored refresh token is invalid, Supabase can repeatedly attempt refresh in embedded contexts.
-      // Clear local state and schedule a signOut (deferred) to wipe stale tokens and stop the loop.
-      if (event === 'TOKEN_REFRESH_FAILED') {
-        prevSessionRef.current = null;
-        setSession(null);
-        setUser(null);
-        setLoading(false);
-
-        if (!refreshCleanupScheduledRef.current) {
-          refreshCleanupScheduledRef.current = true;
-          setTimeout(() => {
-            supabase.auth
-              .signOut()
-              .finally(() => {
-                refreshCleanupScheduledRef.current = false;
-              });
-          }, 0);
-        }
-
-        return;
-      }
 
       // Create a stable session identifier to compare
       const sessionId = newSession?.access_token ?? null;
