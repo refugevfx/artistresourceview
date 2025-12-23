@@ -25,43 +25,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   // Track previous session to avoid redundant updates that cause re-renders
   const prevSessionRef = useRef<string | null>(null);
+  const refreshCleanupScheduledRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
-    
+
     // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        if (!mounted) return;
-        
-        // Create a stable session identifier to compare
-        const sessionId = newSession?.access_token ?? null;
-        
-        // Skip redundant updates - only update if session actually changed
-        if (sessionId === prevSessionRef.current) {
-          return;
-        }
-        prevSessionRef.current = sessionId;
-        
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (!mounted) return;
+
+      // If the stored refresh token is invalid, Supabase can repeatedly attempt refresh in embedded contexts.
+      // Clear local state and schedule a signOut (deferred) to wipe stale tokens and stop the loop.
+      if (event === 'TOKEN_REFRESH_FAILED') {
+        prevSessionRef.current = null;
+        setSession(null);
+        setUser(null);
         setLoading(false);
-        
-        // Detect password recovery event (some flows come through as SIGNED_IN with type=recovery in the URL hash)
-        const hash = window.location.hash ?? '';
-        const isRecoveryHash = /(^|[&#])type=recovery(&|$)/.test(hash);
-        if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && isRecoveryHash)) {
-          setIsPasswordRecovery(true);
+
+        if (!refreshCleanupScheduledRef.current) {
+          refreshCleanupScheduledRef.current = true;
+          setTimeout(() => {
+            supabase.auth
+              .signOut()
+              .finally(() => {
+                refreshCleanupScheduledRef.current = false;
+              });
+          }, 0);
         }
+
+        return;
       }
-    );
+
+      // Create a stable session identifier to compare
+      const sessionId = newSession?.access_token ?? null;
+
+      // Skip redundant updates - only update if session actually changed
+      if (sessionId === prevSessionRef.current) {
+        return;
+      }
+      prevSessionRef.current = sessionId;
+
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+      setLoading(false);
+
+      // Detect password recovery event (some flows come through as SIGNED_IN with type=recovery in the URL hash)
+      const hash = window.location.hash ?? '';
+      const isRecoveryHash = /(^|[&#])type=recovery(&|$)/.test(hash);
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && isRecoveryHash)) {
+        setIsPasswordRecovery(true);
+      }
+    });
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
       if (!mounted) return;
-      
+
       const sessionId = existingSession?.access_token ?? null;
-      
+
       // Only update if this is a new session
       if (sessionId !== prevSessionRef.current) {
         prevSessionRef.current = sessionId;
