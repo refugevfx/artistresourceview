@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useShotGridData } from '@/hooks/useShotGridData';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { getRedShots, getOrangeShots } from '@/data/mockProjectData';
 import { StatusDonut } from './StatusDonut';
 import { BudgetHealthDonut } from './BudgetHealthDonut';
@@ -11,7 +13,7 @@ import { BudgetWarnings } from './BudgetWarnings';
 import { Celebrations } from './Celebrations';
 import { ShotTypeBreakdown } from './ShotTypeBreakdown';
 import { ShotTypeBar } from './ShotTypeBar';
-import { Clock, AlertTriangle, Users, Star, ChevronDown, RefreshCw, AlertCircle, Filter, HelpCircle, LogOut } from 'lucide-react';
+import { Clock, AlertTriangle, Users, Star, ChevronDown, RefreshCw, AlertCircle, Filter, HelpCircle, LogOut, Shield } from 'lucide-react';
 import { BiddingStatus, BIDDING_STATUS_CONFIG } from '@/types/project';
 import {
   DropdownMenu,
@@ -29,6 +31,7 @@ import {
 
 export const ProjectDashboard = () => {
   const { signOut, user } = useAuth();
+  const { isAdmin } = useAdminCheck();
   const [selectedBiddingStatuses, setSelectedBiddingStatuses] = useState<BiddingStatus[]>(['bda']);
   const [selectedEpisode, setSelectedEpisode] = useState<string | null>(null); // null = whole project
   
@@ -240,6 +243,21 @@ export const ProjectDashboard = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  to="/admin"
+                  className="p-1 hover:bg-secondary rounded transition-colors"
+                >
+                  <Shield className="w-3 h-3 text-primary" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-xs">Admin Panel</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <button
