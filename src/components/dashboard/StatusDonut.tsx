@@ -17,17 +17,25 @@ interface StatusGroup {
   count: number;
   color: string;
   description: string;
+  shotgridStatuses: string[];
 }
+
+// Map categories to their ShotGrid statuses for tooltip display
+const getCategoryStatuses = (category: string): string[] => {
+  return STATUS_CONFIG
+    .filter(config => config.category === category)
+    .map(config => config.label);
+};
 
 export const StatusDonut = ({ shots, compact = false }: StatusDonutProps) => {
   const statusGroups = useMemo(() => {
     const groups: StatusGroup[] = [
-      { category: 'waiting', label: 'Wait', count: 0, color: 'hsl(var(--muted))', description: 'Shots waiting to start' },
-      { category: 'active', label: 'Active', count: 0, color: 'hsl(142, 70%, 45%)', description: 'Currently in progress' },
-      { category: 'review', label: 'Review', count: 0, color: 'hsl(80, 70%, 45%)', description: 'Internal review pending' },
-      { category: 'client', label: 'W/Client', count: 0, color: 'hsl(210, 70%, 65%)', description: 'Awaiting client feedback' },
-      { category: 'done', label: 'Complete', count: 0, color: 'hsl(210, 80%, 40%)', description: 'Fully approved & delivered' },
-      { category: 'blocked', label: 'Blocked', count: 0, color: 'hsl(0, 80%, 55%)', description: 'On hold or blocked' },
+      { category: 'waiting', label: 'Wait', count: 0, color: 'hsl(var(--muted))', description: 'Shots waiting to start', shotgridStatuses: getCategoryStatuses('waiting') },
+      { category: 'active', label: 'Active', count: 0, color: 'hsl(142, 70%, 45%)', description: 'Currently in progress', shotgridStatuses: getCategoryStatuses('active') },
+      { category: 'review', label: 'Review', count: 0, color: 'hsl(80, 70%, 45%)', description: 'Internal review pending', shotgridStatuses: getCategoryStatuses('review') },
+      { category: 'client', label: 'W/Client', count: 0, color: 'hsl(210, 70%, 65%)', description: 'Awaiting client feedback', shotgridStatuses: getCategoryStatuses('client') },
+      { category: 'done', label: 'Complete', count: 0, color: 'hsl(210, 80%, 40%)', description: 'Fully approved & delivered', shotgridStatuses: getCategoryStatuses('done') },
+      { category: 'blocked', label: 'Blocked', count: 0, color: 'hsl(0, 80%, 55%)', description: 'On hold or blocked', shotgridStatuses: getCategoryStatuses('blocked') },
     ];
 
     shots.filter(s => s.status !== 'omt').forEach(shot => {
@@ -102,9 +110,13 @@ export const StatusDonut = ({ shots, compact = false }: StatusDonutProps) => {
                 <span className="font-mono font-medium text-foreground">{group.count}</span>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="right">
-              <p className="text-xs">{group.description}</p>
-              <p className="text-xs text-muted-foreground">{Math.round((group.count / total) * 100)}% of shots</p>
+            <TooltipContent side="right" className="max-w-[220px]">
+              <p className="text-xs font-medium mb-1">{group.description}</p>
+              <p className="text-xs text-muted-foreground mb-1">{Math.round((group.count / total) * 100)}% of shots</p>
+              <p className="text-xs text-muted-foreground/70 border-t border-border pt-1 mt-1">
+                <span className="font-medium text-muted-foreground">ShotGrid statuses:</span><br/>
+                {group.shotgridStatuses.join(', ')}
+              </p>
             </TooltipContent>
           </Tooltip>
         ))}
