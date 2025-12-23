@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useShotGridData } from '@/hooks/useShotGridData';
+import { useAuth } from '@/hooks/useAuth';
 import { getRedShots, getOrangeShots } from '@/data/mockProjectData';
 import { StatusDonut } from './StatusDonut';
 import { BudgetHealthDonut } from './BudgetHealthDonut';
@@ -10,7 +11,7 @@ import { BudgetWarnings } from './BudgetWarnings';
 import { Celebrations } from './Celebrations';
 import { ShotTypeBreakdown } from './ShotTypeBreakdown';
 import { ShotTypeBar } from './ShotTypeBar';
-import { Clock, AlertTriangle, Users, Star, ChevronDown, RefreshCw, AlertCircle, Filter, HelpCircle } from 'lucide-react';
+import { Clock, AlertTriangle, Users, Star, ChevronDown, RefreshCw, AlertCircle, Filter, HelpCircle, LogOut } from 'lucide-react';
 import { BiddingStatus, BIDDING_STATUS_CONFIG } from '@/types/project';
 import {
   DropdownMenu,
@@ -27,6 +28,7 @@ import {
 } from '@/components/ui/tooltip';
 
 export const ProjectDashboard = () => {
+  const { signOut, user } = useAuth();
   const [selectedBiddingStatuses, setSelectedBiddingStatuses] = useState<BiddingStatus[]>(['bda']);
   const [selectedEpisode, setSelectedEpisode] = useState<string | null>(null); // null = whole project
   
@@ -238,6 +240,20 @@ export const ProjectDashboard = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={signOut}
+                className="p-1 hover:bg-secondary rounded transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="w-3 h-3 text-muted-foreground" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p className="text-xs">Sign out ({user?.email})</p>
+            </TooltipContent>
+          </Tooltip>
           <button
             onClick={refresh}
             className="p-1 hover:bg-secondary rounded transition-colors"
