@@ -281,6 +281,56 @@ serve(async (req) => {
         break;
       }
 
+      case 'verifyUserEmail': {
+        const { email } = filters || {};
+        if (!email) {
+          throw new Error('email is required for verifyUserEmail');
+        }
+        
+        console.log(`Verifying if email ${email} exists in ShotGrid...`);
+        const userPayload = {
+          filters: [["email", "is", email]],
+          fields: ["name", "email", "sg_status_list", "permission_rule_set"],
+        };
+
+        const userResponse = await fetch(`${shotgridUrl}/api/v1/entity/human_users/_search`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ ...userPayload, page: { size: 1, number: 1 } }),
+        });
+
+        if (!userResponse.ok) {
+          const errorText = await userResponse.text();
+          throw new Error(`Failed to verify user: ${errorText}`);
+        }
+
+        const userData = await userResponse.json();
+        const user = userData.data?.[0] || null;
+        
+        if (user) {
+          const isActive = user.attributes.sg_status_list === 'act';
+          console.log(`Found user: ${user.attributes.name}, active: ${isActive}`);
+          responseData = { 
+            verified: isActive, 
+            user: isActive ? {
+              id: user.id,
+              name: user.attributes.name,
+              email: user.attributes.email,
+              status: user.attributes.sg_status_list
+            } : null,
+            message: isActive ? 'User verified' : 'User is not active in ShotGrid'
+          };
+        } else {
+          console.log(`No user found with email: ${email}`);
+          responseData = { 
+            verified: false, 
+            user: null,
+            message: 'Email not found in ShotGrid'
+          };
+        }
+        break;
+      }
+
       default:
         throw new Error(`Unknown action: ${action}`);
     }
