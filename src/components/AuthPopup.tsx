@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -11,51 +11,15 @@ interface AuthPopupProps {
 
 export function AuthPopup({ onAuthenticated }: AuthPopupProps) {
   const { user } = useAuth();
-  const [popupWindow, setPopupWindow] = useState<Window | null>(null);
   const [isWaiting, setIsWaiting] = useState(false);
 
-  const openAuthPopup = useCallback(() => {
-    const width = 500;
-    const height = 700;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-
-    const popup = window.open(
-      '/auth?popup=1',
-      'auth-popup',
-      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-    );
-
-    if (popup) {
-      setPopupWindow(popup);
-      setIsWaiting(true);
-      popup.focus();
-    }
-  }, []);
-
-  // Listen for auth success message from the popup
-  useEffect(() => {
-    const onMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
-      const data = event.data as { type?: string };
-      if (data?.type === 'AUTH_SUCCESS') {
-        window.location.reload();
-      }
-    };
-
-    window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
-  }, []);
-
-  // Recheck auth when window regains focus (after popup closes)
+  // Recheck auth when window regains focus (after switching back from the auth tab/window)
   useEffect(() => {
     const handleFocus = async () => {
-      // When main window gains focus, recheck the session
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (session?.user) {
-        // Force a page reload to pick up the new auth state
         window.location.reload();
       }
     };
@@ -64,38 +28,12 @@ export function AuthPopup({ onAuthenticated }: AuthPopupProps) {
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
-  // Monitor popup status
+  // If auth state becomes available (same-tab login), proceed
   useEffect(() => {
-    if (!popupWindow) return;
-
-    const checkPopup = setInterval(() => {
-      if (popupWindow.closed) {
-        setPopupWindow(null);
-        setIsWaiting(false);
-        clearInterval(checkPopup);
-        // Recheck auth when popup closes
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          if (session?.user) {
-            window.location.reload();
-          }
-        });
-      }
-    }, 500);
-
-    return () => clearInterval(checkPopup);
-  }, [popupWindow]);
-
-  // When user becomes authenticated, close popup and notify parent
-  useEffect(() => {
-    if (user) {
-      if (popupWindow && !popupWindow.closed) {
-        popupWindow.close();
-      }
-      setPopupWindow(null);
-      setIsWaiting(false);
-      onAuthenticated?.();
-    }
-  }, [user, popupWindow, onAuthenticated]);
+    if (!user) return;
+    setIsWaiting(false);
+    onAuthenticated?.();
+  }, [user, onAuthenticated]);
 
   const handleRefresh = () => {
     window.location.reload();
@@ -109,9 +47,7 @@ export function AuthPopup({ onAuthenticated }: AuthPopupProps) {
             <Shield className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-2xl font-bold">ShotGrid Dashboard</CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Sign in to access the production dashboard
-          </CardDescription>
+          <CardDescription className="text-muted-foreground">Sign in to access the production dashboard</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {isWaiting ? (
@@ -121,13 +57,9 @@ export function AuthPopup({ onAuthenticated }: AuthPopupProps) {
                 <span>Waiting for sign in...</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Complete the sign in process in the popup window.
+                Finish signing in on the other tab/window, then return here.
               </p>
               <div className="flex gap-2 justify-center">
-                <Button variant="outline" onClick={openAuthPopup}>
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Reopen Popup
-                </Button>
                 <Button variant="ghost" onClick={handleRefresh}>
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Refresh
@@ -135,9 +67,11 @@ export function AuthPopup({ onAuthenticated }: AuthPopupProps) {
               </div>
             </div>
           ) : (
-            <Button onClick={openAuthPopup} className="w-full">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Sign In / Sign Up
+            <Button asChild className="w-full" onClick={() => setIsWaiting(true)}>
+              <a href="/auth" target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open Sign In in New Window
+              </a>
             </Button>
           )}
         </CardContent>
@@ -145,3 +79,4 @@ export function AuthPopup({ onAuthenticated }: AuthPopupProps) {
     </div>
   );
 }
+
