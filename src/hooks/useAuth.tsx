@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -22,13 +22,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  
+  // Track previous session to avoid redundant updates that cause re-renders
+  const prevSessionRef = useRef<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      (event, newSession) => {
+        if (!mounted) return;
+        
+        // Create a stable session identifier to compare
+        const sessionId = newSession?.access_token ?? null;
+        
+        // Skip redundant updates - only update if session actually changed
+        if (sessionId === prevSessionRef.current) {
+          return;
+        }
+        prevSessionRef.current = sessionId;
+        
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
         setLoading(false);
         
         // Detect password recovery event (some flows come through as SIGNED_IN with type=recovery in the URL hash)
@@ -41,13 +57,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      if (!mounted) return;
+      
+      const sessionId = existingSession?.access_token ?? null;
+      
+      // Only update if this is a new session
+      if (sessionId !== prevSessionRef.current) {
+        prevSessionRef.current = sessionId;
+        setSession(existingSession);
+        setUser(existingSession?.user ?? null);
+      }
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const clearPasswordRecovery = () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -28,8 +28,12 @@ export default function Auth() {
   const { user, loading: authLoading, signIn, signUp, resetPassword, updatePassword, isPasswordRecovery, clearPasswordRecovery } = useAuth();
   const { toast } = useToast();
   
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // Use refs for input values to prevent re-render issues when embedded
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const resetEmailRef = useRef<HTMLInputElement>(null);
+  const newPasswordRef = useRef<HTMLInputElement>(null);
+  
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
@@ -64,7 +68,7 @@ export default function Auth() {
     }
   }, [toast]);
 
-  const validateInput = () => {
+  const validateInput = useCallback((email: string, password: string) => {
     try {
       authSchema.parse({ email, password });
       return null;
@@ -74,12 +78,15 @@ export default function Auth() {
       }
       return 'Invalid input';
     }
-  };
+  }, []);
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSignIn = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validationError = validateInput();
+    const email = emailRef.current?.value ?? '';
+    const password = passwordRef.current?.value ?? '';
+    
+    const validationError = validateInput(email, password);
     if (validationError) {
       toast({ title: 'Validation Error', description: validationError, variant: 'destructive' });
       return;
@@ -98,12 +105,15 @@ export default function Auth() {
         variant: 'destructive',
       });
     }
-  };
+  }, [signIn, toast, validateInput]);
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignUp = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validationError = validateInput();
+    const email = emailRef.current?.value ?? '';
+    const password = passwordRef.current?.value ?? '';
+    
+    const validationError = validateInput(email, password);
     if (validationError) {
       toast({ title: 'Validation Error', description: validationError, variant: 'destructive' });
       return;
@@ -139,10 +149,12 @@ export default function Auth() {
       title: 'Account created!',
       description: 'You can now sign in with your credentials.',
     });
-  };
+  }, [signUp, toast, validateInput]);
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  const handleForgotPassword = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const email = resetEmailRef.current?.value ?? '';
     
     try {
       emailSchema.parse({ email });
@@ -171,10 +183,12 @@ export default function Auth() {
       description: 'We sent you a password reset link.',
     });
     setShowForgotPassword(false);
-  };
+  }, [resetPassword, toast]);
 
-  const handleUpdatePassword = async (e: React.FormEvent) => {
+  const handleUpdatePassword = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const password = newPasswordRef.current?.value ?? '';
     
     try {
       passwordSchema.parse({ password });
@@ -204,7 +218,7 @@ export default function Auth() {
     });
     clearPasswordRecovery();
     navigate('/');
-  };
+  }, [updatePassword, toast, clearPasswordRecovery, navigate]);
 
   if (authLoading) {
     return (
@@ -236,10 +250,10 @@ export default function Auth() {
                   id="new-password"
                   type="password"
                   placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  ref={newPasswordRef}
                   required
                   disabled={loading}
+                  autoComplete="new-password"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
@@ -275,10 +289,10 @@ export default function Auth() {
                   id="reset-email"
                   type="email"
                   placeholder="your.email@studio.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  ref={resetEmailRef}
                   required
                   disabled={loading}
+                  autoComplete="email"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
@@ -328,10 +342,10 @@ export default function Auth() {
                     id="signin-email"
                     type="email"
                     placeholder="your.email@studio.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    ref={emailRef}
                     required
                     disabled={loading}
+                    autoComplete="email"
                   />
                 </div>
                 <div className="space-y-2">
@@ -349,10 +363,10 @@ export default function Auth() {
                     id="signin-password"
                     type="password"
                     placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    ref={passwordRef}
                     required
                     disabled={loading}
+                    autoComplete="current-password"
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
@@ -373,10 +387,10 @@ export default function Auth() {
                     id="signup-email"
                     type="email"
                     placeholder="your.email@studio.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    ref={emailRef}
                     required
                     disabled={loading}
+                    autoComplete="email"
                   />
                 </div>
                 <div className="space-y-2">
@@ -385,10 +399,10 @@ export default function Auth() {
                     id="signup-password"
                     type="password"
                     placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    ref={passwordRef}
                     required
                     disabled={loading}
+                    autoComplete="new-password"
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
