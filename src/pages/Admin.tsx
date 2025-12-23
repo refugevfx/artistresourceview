@@ -14,8 +14,14 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Shield, ShieldOff, Loader2 } from 'lucide-react';
+import { ArrowLeft, Shield, ShieldOff, Loader2, KeyRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface UserProfile {
   id: string;
@@ -33,6 +39,7 @@ export default function Admin() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [resettingPassword, setResettingPassword] = useState<string | null>(null);
 
   async function fetchUsers() {
     setLoading(true);
@@ -108,6 +115,22 @@ export default function Admin() {
     setUpdating(null);
   }
 
+  async function resetUserPassword(email: string, userId: string) {
+    setResettingPassword(userId);
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth?reset=true`,
+    });
+
+    if (error) {
+      toast({ title: 'Error sending reset email', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Password reset email sent', description: `Reset link sent to ${email}` });
+    }
+
+    setResettingPassword(null);
+  }
+
   return (
     <>
       <Helmet>
@@ -169,7 +192,28 @@ export default function Admin() {
                             <Badge variant="secondary">User</Badge>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right space-x-2">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={resettingPassword === user.user_id}
+                                  onClick={() => resetUserPassword(user.email, user.user_id)}
+                                >
+                                  {resettingPassword === user.user_id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <KeyRound className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Send password reset email</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                           <Button
                             variant={user.isAdmin ? 'outline' : 'default'}
                             size="sm"
