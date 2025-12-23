@@ -31,8 +31,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         setLoading(false);
         
-        // Detect password recovery event
-        if (event === 'PASSWORD_RECOVERY') {
+        // Detect password recovery event (some flows come through as SIGNED_IN with type=recovery in the URL hash)
+        const hash = window.location.hash ?? '';
+        const isRecoveryHash = /(^|[&#])type=recovery(&|$)/.test(hash);
+        if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && isRecoveryHash)) {
           setIsPasswordRecovery(true);
         }
       }

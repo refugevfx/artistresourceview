@@ -34,11 +34,35 @@ export default function Auth() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   useEffect(() => {
+    // If the auth provider didn't catch it yet, detect recovery directly from URL hash
+    const hash = window.location.hash ?? '';
+    if (/(^|[&#])type=recovery(&|$)/.test(hash)) {
+      // no-op; the auth state listener should flip isPasswordRecovery shortly
+      return;
+    }
+
     // Only redirect if user is logged in AND not in password recovery mode
     if (user && !authLoading && !isPasswordRecovery) {
       navigate('/');
     }
   }, [user, authLoading, navigate, isPasswordRecovery]);
+
+  useEffect(() => {
+    // Show a helpful message if the email link is invalid/expired
+    const hash = window.location.hash ?? '';
+    if (!hash) return;
+
+    const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+    const errorDescription = hashParams.get('error_description');
+    if (errorDescription) {
+      toast({
+        title: 'Reset link problem',
+        description: decodeURIComponent(errorDescription.replace(/\+/g, ' ')),
+        variant: 'destructive',
+      });
+      setShowForgotPassword(true);
+    }
+  }, [toast]);
 
   const validateInput = () => {
     try {
