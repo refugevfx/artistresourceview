@@ -21,7 +21,7 @@ export function AuthPopup({ onAuthenticated }: AuthPopupProps) {
     const top = window.screenY + (window.outerHeight - height) / 2;
 
     const popup = window.open(
-      '/auth',
+      '/auth?popup=1',
       'auth-popup',
       `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
     );
@@ -33,11 +33,27 @@ export function AuthPopup({ onAuthenticated }: AuthPopupProps) {
     }
   }, []);
 
+  // Listen for auth success message from the popup
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as { type?: string };
+      if (data?.type === 'AUTH_SUCCESS') {
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
+
   // Recheck auth when window regains focus (after popup closes)
   useEffect(() => {
     const handleFocus = async () => {
       // When main window gains focus, recheck the session
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session?.user) {
         // Force a page reload to pick up the new auth state
         window.location.reload();

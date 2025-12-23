@@ -60,8 +60,13 @@ export default function Auth() {
 
     // Only redirect if user is logged in AND not in password recovery mode
     if (user && !authLoading && !isPasswordRecovery) {
-      // Check if we're in a popup window - if so, just close it
+      // If we're in a popup window, notify the opener and close
       if (window.opener && !window.opener.closed) {
+        try {
+          window.opener.postMessage({ type: 'AUTH_SUCCESS' }, window.location.origin);
+        } catch {
+          // ignore
+        }
         window.close();
         return;
       }
