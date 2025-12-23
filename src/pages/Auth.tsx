@@ -60,8 +60,11 @@ export default function Auth() {
 
     // Only redirect if user is logged in AND not in password recovery mode
     if (user && !authLoading && !isPasswordRecovery) {
-      // If we're in a popup window, notify the opener and close
-      if (window.opener && !window.opener.closed) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isPopup = urlParams.get('popup') === '1';
+
+      // Only auto-close when explicitly opened as a popup
+      if (isPopup && window.opener && !window.opener.closed) {
         try {
           window.opener.postMessage({ type: 'AUTH_SUCCESS' }, window.location.origin);
         } catch {
@@ -70,6 +73,7 @@ export default function Auth() {
         window.close();
         return;
       }
+
       navigate('/');
     }
   }, [user, authLoading, navigate, isPasswordRecovery]);
