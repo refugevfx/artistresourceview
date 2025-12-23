@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Shield } from 'lucide-react';
+import { Loader2, Shield, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 
 const authSchema = z.object({
@@ -15,20 +15,38 @@ const authSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters').max(72, 'Password is too long'),
 });
 
+const emailSchema = z.object({
+  email: z.string().trim().email('Please enter a valid email address').max(255, 'Email is too long'),
+});
+
+const passwordSchema = z.object({
+  password: z.string().min(6, 'Password must be at least 6 characters').max(72, 'Password is too long'),
+});
+
 export default function Auth() {
   const navigate = useNavigate();
-  const { user, loading: authLoading, signIn, signUp } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { user, loading: authLoading, signIn, signUp, resetPassword, updatePassword } = useAuth();
   const { toast } = useToast();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+
+  // Check if user arrived via password reset link
+  useEffect(() => {
+    if (searchParams.get('reset') === 'true' && user) {
+      setIsResettingPassword(true);
+    }
+  }, [searchParams, user]);
 
   useEffect(() => {
-    if (user && !authLoading) {
+    if (user && !authLoading && !isResettingPassword) {
       navigate('/');
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, isResettingPassword]);
 
   const validateInput = () => {
     try {
@@ -107,10 +125,162 @@ export default function Auth() {
     });
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      emailSchema.parse({ email });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        toast({ title: 'Validation Error', description: err.errors[0].message, variant: 'destructive' });
+        return;
+      }
+    }
+    
+    setLoading(true);
+    const { error } = await resetPassword(email);
+    setLoading(false);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Check your email',
+      description: 'We sent you a password reset link.',
+    });
+    setShowForgotPassword(false);
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      passwordSchema.parse({ password });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        toast({ title: 'Validation Error', description: err.errors[0].message, variant: 'destructive' });
+        return;
+      }
+    }
+    
+    setLoading(true);
+    const { error } = await updatePassword(password);
+    setLoading(false);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Password updated!',
+      description: 'You can now sign in with your new password.',
+    });
+    setIsResettingPassword(false);
+    navigate('/');
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Password reset form (after clicking email link)
+  if (isResettingPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
+        <Card className="w-full max-w-md border-border/50 shadow-xl">
+          <CardHeader className="text-center space-y-2">
+            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+              <Shield className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Set New Password</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Enter your new password below
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleUpdatePassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Update Password
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Forgot password form
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
+        <Card className="w-full max-w-md border-border/50 shadow-xl">
+          <CardHeader className="text-center space-y-2">
+            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+              <Shield className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Enter your email and we'll send you a reset link
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">Email</Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder="your.email@studio.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Send Reset Link
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => setShowForgotPassword(false)}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Sign In
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -149,7 +319,16 @@ export default function Auth() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="signin-password">Password</Label>
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
                   <Input
                     id="signin-password"
                     type="password"
