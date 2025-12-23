@@ -60,6 +60,11 @@ export default function Auth() {
 
     // Only redirect if user is logged in AND not in password recovery mode
     if (user && !authLoading && !isPasswordRecovery) {
+      // Check if we're in a popup window - if so, just close it
+      if (window.opener && !window.opener.closed) {
+        window.close();
+        return;
+      }
       navigate('/');
     }
   }, [user, authLoading, navigate, isPasswordRecovery]);
