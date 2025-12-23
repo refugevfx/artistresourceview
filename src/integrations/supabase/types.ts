@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          is_approved: boolean
           shotgrid_name: string | null
           shotgrid_user_id: number | null
           updated_at: string
@@ -28,6 +29,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          is_approved?: boolean
           shotgrid_name?: string | null
           shotgrid_user_id?: number | null
           updated_at?: string
@@ -37,6 +39,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          is_approved?: boolean
           shotgrid_name?: string | null
           shotgrid_user_id?: number | null
           updated_at?: string
