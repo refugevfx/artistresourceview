@@ -143,7 +143,7 @@ export default function Auth() {
 
       if (shotgridError) {
         toast({
-          title: 'ShotGrid Verification Failed',
+          title: 'Verification Failed',
           description: shotgridError,
           variant: 'destructive',
         });
@@ -250,8 +250,8 @@ export default function Auth() {
     return (
       <>
         <Helmet>
-          <title>Sign In | ShotGrid Dashboard</title>
-          <meta name="description" content="Sign in to the ShotGrid dashboard to view project status, budget warnings, and artist workload." />
+          <title>Sign In | Dashboard</title>
+          <meta name="description" content="Sign in to the dashboard to view project status, budget warnings, and artist workload." />
           <link rel="canonical" href={`${window.location.origin}/auth`} />
         </Helmet>
         <div className="min-h-screen flex items-center justify-center bg-background">
@@ -266,8 +266,8 @@ export default function Auth() {
     return (
       <>
         <Helmet>
-          <title>Reset Password | ShotGrid Dashboard</title>
-          <meta name="description" content="Reset your password for the ShotGrid dashboard." />
+          <title>Reset Password | Dashboard</title>
+          <meta name="description" content="Reset your password for the dashboard." />
           <link rel="canonical" href={`${window.location.origin}/auth`} />
         </Helmet>
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
@@ -311,8 +311,8 @@ export default function Auth() {
     return (
       <>
         <Helmet>
-          <title>Forgot Password | ShotGrid Dashboard</title>
-          <meta name="description" content="Request a password reset link for the ShotGrid dashboard." />
+          <title>Forgot Password | Dashboard</title>
+          <meta name="description" content="Request a password reset link for the dashboard." />
           <link rel="canonical" href={`${window.location.origin}/auth`} />
         </Helmet>
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
@@ -362,20 +362,20 @@ export default function Auth() {
 
   return (
     <>
-      <Helmet>
-        <title>Sign In | ShotGrid Dashboard</title>
-        <meta name="description" content="Sign in to the ShotGrid dashboard to view project status, budget warnings, and artist workload." />
-        <link rel="canonical" href={`${window.location.origin}/auth`} />
-      </Helmet>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
-        <Card className="w-full max-w-md border-border/50 shadow-xl">
-          <CardHeader className="text-center space-y-2">
-            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-              <Shield className="h-6 w-6 text-primary" />
-            </div>
-            <CardTitle className="text-2xl font-bold">ShotGrid Dashboard</CardTitle>
-            <CardDescription className="text-muted-foreground">Sign in with your ShotGrid email to access the dashboard</CardDescription>
-          </CardHeader>
+        <Helmet>
+          <title>Sign In | Dashboard</title>
+          <meta name="description" content="Sign in to the dashboard to view project status, budget warnings, and artist workload." />
+          <link rel="canonical" href={`${window.location.origin}/auth`} />
+        </Helmet>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
+          <Card className="w-full max-w-md border-border/50 shadow-xl">
+            <CardHeader className="text-center space-y-2">
+              <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+                <Shield className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle className="text-2xl font-bold">Dashboard Sign In</CardTitle>
+              <CardDescription className="text-muted-foreground">Sign in with your studio email to access the dashboard</CardDescription>
+            </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -430,10 +430,10 @@ export default function Auth() {
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="p-3 bg-muted/50 rounded-md text-sm text-muted-foreground mb-4">
-                    <strong>Note:</strong> Only emails registered in ShotGrid can create accounts.
+                    <strong>Note:</strong> Only registered studio emails can create accounts.
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">ShotGrid Email</Label>
+                    <Label htmlFor="signup-email">Studio Email</Label>
                     <Input
                       id="signup-email"
                       name="email"
