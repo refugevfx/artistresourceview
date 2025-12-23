@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,28 +25,20 @@ const passwordSchema = z.object({
 
 export default function Auth() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { user, loading: authLoading, signIn, signUp, resetPassword, updatePassword } = useAuth();
+  const { user, loading: authLoading, signIn, signUp, resetPassword, updatePassword, isPasswordRecovery, clearPasswordRecovery } = useAuth();
   const { toast } = useToast();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
-
-  // Check if user arrived via password reset link
-  useEffect(() => {
-    if (searchParams.get('reset') === 'true' && user) {
-      setIsResettingPassword(true);
-    }
-  }, [searchParams, user]);
 
   useEffect(() => {
-    if (user && !authLoading && !isResettingPassword) {
+    // Only redirect if user is logged in AND not in password recovery mode
+    if (user && !authLoading && !isPasswordRecovery) {
       navigate('/');
     }
-  }, [user, authLoading, navigate, isResettingPassword]);
+  }, [user, authLoading, navigate, isPasswordRecovery]);
 
   const validateInput = () => {
     try {
@@ -186,7 +178,7 @@ export default function Auth() {
       title: 'Password updated!',
       description: 'You can now sign in with your new password.',
     });
-    setIsResettingPassword(false);
+    clearPasswordRecovery();
     navigate('/');
   };
 
@@ -199,7 +191,7 @@ export default function Auth() {
   }
 
   // Password reset form (after clicking email link)
-  if (isResettingPassword) {
+  if (isPasswordRecovery) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
         <Card className="w-full max-w-md border-border/50 shadow-xl">
