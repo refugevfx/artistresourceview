@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
@@ -32,7 +33,22 @@ export function AuthPopup({ onAuthenticated }: AuthPopupProps) {
     }
   }, []);
 
-  // Monitor popup status and user authentication
+  // Recheck auth when window regains focus (after popup closes)
+  useEffect(() => {
+    const handleFocus = async () => {
+      // When main window gains focus, recheck the session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        // Force a page reload to pick up the new auth state
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
+  // Monitor popup status
   useEffect(() => {
     if (!popupWindow) return;
 
@@ -41,6 +57,12 @@ export function AuthPopup({ onAuthenticated }: AuthPopupProps) {
         setPopupWindow(null);
         setIsWaiting(false);
         clearInterval(checkPopup);
+        // Recheck auth when popup closes
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session?.user) {
+            window.location.reload();
+          }
+        });
       }
     }, 500);
 
