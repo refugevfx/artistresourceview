@@ -189,7 +189,7 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
                                 opacity,
                               }}
                             >
-                            <span className="px-1 text-[9px] text-foreground truncate block leading-5 font-medium">
+                            <span className="px-1 text-[9px] truncate block leading-5 font-medium" style={{ color: '#1a1a1a' }}>
                               {row.name}
                             </span>
                           </div>
