@@ -193,10 +193,10 @@ export function ResourceDashboard() {
             </div>
           </CardHeader>
           <CardContent className="py-1.5 px-2">
-            <TabsContent value="chart" className="mt-0">
+            <TabsContent value="chart" className="mt-0 h-[310px]">
               {isLoading ? (
-                <div className="h-[280px] flex items-center justify-center">
-                  <Skeleton className="h-[250px] w-full" />
+                <div className="h-full flex items-center justify-center">
+                  <Skeleton className="h-[280px] w-full" />
                 </div>
               ) : (
                 <ResourceChart 
@@ -211,10 +211,10 @@ export function ResourceDashboard() {
               )}
             </TabsContent>
 
-            <TabsContent value="bookings" className="mt-0">
+            <TabsContent value="bookings" className="mt-0 h-[310px]">
               {isLoading ? (
-                <div className="h-[280px] flex items-center justify-center">
-                  <Skeleton className="h-[250px] w-full" />
+                <div className="h-full flex items-center justify-center">
+                  <Skeleton className="h-[280px] w-full" />
                 </div>
               ) : (
                 <BookingsGanttChart
@@ -225,10 +225,10 @@ export function ResourceDashboard() {
               )}
             </TabsContent>
             
-            <TabsContent value="table" className="mt-0">
+            <TabsContent value="table" className="mt-0 h-[310px]">
               {isLoading ? (
-                <div className="h-[280px] flex items-center justify-center">
-                  <Skeleton className="h-[250px] w-full" />
+                <div className="h-full flex items-center justify-center">
+                  <Skeleton className="h-[280px] w-full" />
                 </div>
               ) : (
                 <ResourceDataTable
