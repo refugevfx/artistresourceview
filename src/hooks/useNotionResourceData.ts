@@ -27,12 +27,14 @@ interface UseNotionResourceDataReturn {
   peaks: { animation: number; cg: number; compositing: number; fx: number };
   isLoading: boolean;
   isRefreshingBookings: boolean;
+  isRefreshingBids: boolean;
   error: string | null;
   filters: ResourceFilters;
   settings: ResourceSettings;
   animationKey: number;
   setFilters: (filters: Partial<ResourceFilters>) => void;
   setSettings: (settings: Partial<ResourceSettings>) => void;
+  refreshBidsOnly: () => Promise<void>;
   refreshBookingsOnly: () => Promise<void>;
   refreshAll: () => Promise<void>;
 }
@@ -58,6 +60,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
   const [peaks, setPeaks] = useState({ animation: 0, cg: 0, compositing: 0, fx: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshingBookings, setIsRefreshingBookings] = useState(false);
+  const [isRefreshingBids, setIsRefreshingBids] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [animationKey, setAnimationKey] = useState(0);
   
@@ -240,6 +243,37 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
     return { points, peaks: peakValues };
   }, []);
 
+  // Quick refresh - only bids/budgets data
+  const refreshBidsOnly = useCallback(async () => {
+    setIsRefreshingBids(true);
+    setError(null);
+
+    try {
+      console.log('Refreshing bids only...');
+      const episodesData = await fetchBudgets(projects, filters.statuses);
+      setEpisodes(episodesData);
+
+      // Recalculate with new episodes + existing bookings
+      const { points, peaks: peakValues } = calculateData(
+        episodesData, 
+        bookings, 
+        settings.curves, 
+        filters,
+        settings.zoom
+      );
+      
+      setDataPoints(points);
+      setPeaks(peakValues);
+      setAnimationKey(prev => prev + 1); // Trigger animation
+      console.log('Bids refresh complete');
+    } catch (err) {
+      console.error('Error fetching bids:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch bids');
+    } finally {
+      setIsRefreshingBids(false);
+    }
+  }, [fetchBudgets, calculateData, settings, filters, projects, bookings]);
+
   // Quick refresh - only bookings data
   const refreshBookingsOnly = useCallback(async () => {
     setIsRefreshingBookings(true);
@@ -339,12 +373,14 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
     peaks,
     isLoading,
     isRefreshingBookings,
+    isRefreshingBids,
     error,
     filters,
     settings,
     animationKey,
     setFilters,
     setSettings,
+    refreshBidsOnly,
     refreshBookingsOnly,
     refreshAll,
   };
