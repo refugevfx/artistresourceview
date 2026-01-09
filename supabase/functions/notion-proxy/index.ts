@@ -161,7 +161,7 @@ serve(async (req) => {
             endDate: props['Date']?.date?.end || null,
             studio: getSelect(props['Studio']),
             episodeCount: getNumber(props['Episode Count']),
-            parentId: getRelationIds(props['Projects Core'])?.[0] || null,
+            parentId: getRelationIds(props['Parent item'])?.[0] || null,
           };
         });
 
