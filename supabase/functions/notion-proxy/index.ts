@@ -130,7 +130,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, databaseId, filter, notionToken } = await req.json();
+    const { action, databaseId, filter, notionToken, includeHistorical } = await req.json();
 
     console.log(`Notion proxy action: ${action}`);
 
@@ -239,8 +239,8 @@ serve(async (req) => {
           throw new Error('NOTION_BOOKINGS_DB_ID not configured');
         }
 
-        // Filter out expired bookings
-        const bookingFilter = {
+        // Filter out expired bookings unless viewing historical/completed projects
+        const bookingFilter = includeHistorical ? undefined : {
           and: [
             {
               property: 'End Date',
@@ -249,6 +249,7 @@ serve(async (req) => {
           ]
         };
 
+        console.log('Fetching bookings, includeHistorical:', includeHistorical);
         const pages = await queryDatabase(bookingsDbId, bookingFilter, notionToken);
         
         const bookings = pages.map((page) => {
