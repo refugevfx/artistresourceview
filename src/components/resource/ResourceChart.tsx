@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   ComposedChart, 
   Area, 
@@ -49,6 +49,11 @@ export function ResourceChart({
   autoRescale = true
 }: ResourceChartProps) {
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
+  
+  // Delayed Y-axis scaling - curves animate first, then scale adjusts
+  const [displayedYMin, setDisplayedYMin] = useState(0);
+  const [displayedYMax, setDisplayedYMax] = useState(10);
+  const isFirstRender = useRef(true);
 
   const chartData = dataPoints.map(point => {
     const date = format(parseISO(point.date), 'MMM yyyy');
@@ -80,7 +85,7 @@ export function ResourceChart({
     };
   });
 
-  // Calculate Y axis bounds
+  // Calculate target Y axis bounds
   // If autoRescale is off, include all series; if on, only visible series
   const allValues = autoRescale
     ? chartData.flatMap(d => [
@@ -95,9 +100,28 @@ export function ResourceChart({
   
   const maxValue = Math.max(...allValues, 1);
   const minValue = Math.min(...allValues, 0);
-  const yAxisMax = Math.ceil(maxValue * 1.1);
-  const yAxisMin = minValue < 0 ? Math.floor(minValue * 1.1) : 0;
+  const targetYMax = Math.ceil(maxValue * 1.1);
+  const targetYMin = minValue < 0 ? Math.floor(minValue * 1.1) : 0;
   const hasNegativeValues = minValue < 0;
+
+  // Delay Y-axis rescaling so curves animate first, then scale adjusts
+  useEffect(() => {
+    if (isFirstRender.current) {
+      // On first render, set immediately
+      setDisplayedYMin(targetYMin);
+      setDisplayedYMax(targetYMax);
+      isFirstRender.current = false;
+      return;
+    }
+    
+    // Wait for curve animation to complete (800ms), then animate scale
+    const timer = setTimeout(() => {
+      setDisplayedYMin(targetYMin);
+      setDisplayedYMax(targetYMax);
+    }, 850);
+    
+    return () => clearTimeout(timer);
+  }, [targetYMin, targetYMax, showBooked]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
@@ -182,11 +206,12 @@ export function ResourceChart({
               height={20}
             />
             <YAxis 
-              domain={[yAxisMin, yAxisMax]}
+              domain={[displayedYMin, displayedYMax]}
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
               axisLine={{ stroke: 'hsl(var(--border))' }}
               tickLine={{ stroke: 'hsl(var(--border))' }}
               width={30}
+              allowDataOverflow={true}
             />
             {hasNegativeValues && (
               <ReferenceLine 
