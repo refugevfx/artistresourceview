@@ -18,6 +18,7 @@ interface ResourceChartProps {
   dataPoints: ResourceDataPoint[];
   showBooked: boolean;
   peaks: { animation: number; cg: number; compositing: number; fx: number };
+  animationKey?: number; // Key to trigger re-animation
 }
 
 // Department colors matching the design reference
@@ -28,7 +29,7 @@ const DEPARTMENT_COLORS = {
   fx: '#EF5350', // Coral red
 };
 
-export function ResourceChart({ dataPoints, showBooked, peaks }: ResourceChartProps) {
+export function ResourceChart({ dataPoints, showBooked, peaks, animationKey = 0 }: ResourceChartProps) {
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
 
   // Transform data for chart - if showBooked, show remaining need (needed - booked)
@@ -114,7 +115,7 @@ export function ResourceChart({ dataPoints, showBooked, peaks }: ResourceChartPr
   }
 
   return (
-    <div className="w-full h-[400px]">
+    <div className="w-full h-[400px]" key={animationKey}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={chartData}
@@ -184,6 +185,9 @@ export function ResourceChart({ dataPoints, showBooked, peaks }: ResourceChartPr
             activeDot={{ r: 6, fill: DEPARTMENT_COLORS.animation }}
             onMouseEnter={() => setHoveredLine('ANM')}
             onMouseLeave={() => setHoveredLine(null)}
+            isAnimationActive={true}
+            animationDuration={800}
+            animationEasing="ease-out"
           >
             <LabelList dataKey="ANM" content={renderCustomLabel} />
           </Area>
@@ -198,6 +202,9 @@ export function ResourceChart({ dataPoints, showBooked, peaks }: ResourceChartPr
             activeDot={{ r: 6, fill: DEPARTMENT_COLORS.cg }}
             onMouseEnter={() => setHoveredLine('CG')}
             onMouseLeave={() => setHoveredLine(null)}
+            isAnimationActive={true}
+            animationDuration={800}
+            animationEasing="ease-out"
           >
             <LabelList dataKey="CG" content={renderCustomLabel} />
           </Area>
@@ -212,6 +219,9 @@ export function ResourceChart({ dataPoints, showBooked, peaks }: ResourceChartPr
             activeDot={{ r: 6, fill: DEPARTMENT_COLORS.compositing }}
             onMouseEnter={() => setHoveredLine('COMP')}
             onMouseLeave={() => setHoveredLine(null)}
+            isAnimationActive={true}
+            animationDuration={800}
+            animationEasing="ease-out"
           >
             <LabelList dataKey="COMP" content={renderCustomLabel} />
           </Area>
@@ -226,6 +236,9 @@ export function ResourceChart({ dataPoints, showBooked, peaks }: ResourceChartPr
             activeDot={{ r: 6, fill: DEPARTMENT_COLORS.fx }}
             onMouseEnter={() => setHoveredLine('FX')}
             onMouseLeave={() => setHoveredLine(null)}
+            isAnimationActive={true}
+            animationDuration={800}
+            animationEasing="ease-out"
           >
             <LabelList dataKey="FX" content={renderCustomLabel} />
           </Area>
