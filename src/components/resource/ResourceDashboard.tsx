@@ -97,7 +97,6 @@ export function ResourceDashboard() {
             onClick={refreshBookingsOnly}
             disabled={isLoading || isRefreshingBookings}
           >
-            <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshingBookings ? 'animate-spin' : ''}`} />
             Update Bookings
           </Button>
           
