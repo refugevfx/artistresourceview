@@ -175,7 +175,45 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
                       const style = getBarStyle(booking);
                       if (!style) return null;
 
-                      const opacity = booking.allocationPercent < 1 ? 0.6 : 1;
+                      const allocation = booking.allocationPercent;
+                      const color = DEPARTMENT_COLORS[row.department];
+                      
+                      // Determine fill style based on allocation
+                      let backgroundStyle: React.CSSProperties = {
+                        backgroundColor: color,
+                      };
+                      
+                      if (allocation === 0) {
+                        // No fill - just outline
+                        backgroundStyle = {
+                          backgroundColor: 'transparent',
+                          border: `2px solid ${color}`,
+                        };
+                      } else if (allocation < 0.33) {
+                        // Sparse diagonal hash
+                        backgroundStyle = {
+                          backgroundColor: color,
+                          backgroundImage: `repeating-linear-gradient(
+                            45deg,
+                            transparent,
+                            transparent 4px,
+                            rgba(255,255,255,0.5) 4px,
+                            rgba(255,255,255,0.5) 8px
+                          )`,
+                        };
+                      } else if (allocation < 0.66) {
+                        // Dense diagonal hash
+                        backgroundStyle = {
+                          backgroundColor: color,
+                          backgroundImage: `repeating-linear-gradient(
+                            45deg,
+                            transparent,
+                            transparent 2px,
+                            rgba(255,255,255,0.35) 2px,
+                            rgba(255,255,255,0.35) 4px
+                          )`,
+                        };
+                      }
 
                       return (
                         <Tooltip key={booking.id}>
@@ -185,15 +223,14 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
                               style={{
                                 left: style.left,
                                 width: style.width,
-                                backgroundColor: DEPARTMENT_COLORS[row.department],
-                                opacity,
+                                ...backgroundStyle,
                               }}
                             >
-                            <span className="px-1 text-[9px] truncate block leading-5 font-medium" style={{ color: '#1a1a1a' }}>
-                              {row.name}
-                            </span>
-                          </div>
-                        </TooltipTrigger>
+                              <span className="px-1 text-[9px] truncate block leading-5 font-medium" style={{ color: allocation === 0 ? color : '#1a1a1a' }}>
+                                {row.name}
+                              </span>
+                            </div>
+                          </TooltipTrigger>
                         <TooltipContent side="top" className="text-xs">
                           <div className="space-y-0.5">
                             <div className="font-medium">{row.name}</div>
