@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { RefreshCw, Eye, EyeOff, BarChart3, Table2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -5,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Toggle } from '@/components/ui/toggle';
 import { useNotionResourceData } from '@/hooks/useNotionResourceData';
 import { ResourceChart } from './ResourceChart';
 import { ResourceDataTable } from './ResourceDataTable';
@@ -28,6 +30,9 @@ export function ResourceDashboard() {
     refreshBookingsOnly,
     refreshAll,
   } = useNotionResourceData();
+
+  const [showTotalNeeded, setShowTotalNeeded] = useState(false);
+  const [showTotalBooked, setShowTotalBooked] = useState(false);
 
   const handleShowBookedToggle = () => {
     setFilters({ showBooked: !filters.showBooked });
@@ -136,24 +141,48 @@ export function ResourceDashboard() {
                 </TabsTrigger>
               </TabsList>
               
-              {/* Peak indicators */}
-              <div className="flex gap-4 text-sm font-normal">
-                <span className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-full bg-blue-500" />
-                  ANM: {peaks.animation.toFixed(1)}
-                </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-full bg-amber-500" />
-                  CG: {peaks.cg.toFixed(1)}
-                </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                  COMP: {peaks.compositing.toFixed(1)}
-                </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
-                  FX: {peaks.fx.toFixed(1)}
-                </span>
+              <div className="flex items-center gap-4">
+                {/* Total lines toggles */}
+                <div className="flex items-center gap-2">
+                  <Toggle 
+                    pressed={showTotalNeeded} 
+                    onPressedChange={setShowTotalNeeded}
+                    size="sm"
+                    className="data-[state=on]:bg-gray-500/20 gap-1"
+                  >
+                    <div className="w-4 h-0.5 bg-gray-400" style={{ borderTop: '2px dashed #9CA3AF' }} />
+                    Total Needed
+                  </Toggle>
+                  <Toggle 
+                    pressed={showTotalBooked} 
+                    onPressedChange={setShowTotalBooked}
+                    size="sm"
+                    className="data-[state=on]:bg-blue-500/20 gap-1"
+                  >
+                    <div className="w-4 h-0.5" style={{ borderTop: '2px dashed #60A5FA' }} />
+                    Total Booked
+                  </Toggle>
+                </div>
+
+                {/* Peak indicators */}
+                <div className="flex gap-4 text-sm font-normal">
+                  <span className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-blue-500" />
+                    ANM: {peaks.animation.toFixed(1)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-amber-500" />
+                    CG: {peaks.cg.toFixed(1)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-green-500" />
+                    COMP: {peaks.compositing.toFixed(1)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    FX: {peaks.fx.toFixed(1)}
+                  </span>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -177,6 +206,8 @@ export function ResourceDashboard() {
                   showBooked={filters.showBooked}
                   peaks={peaks}
                   animationKey={animationKey}
+                  showTotalNeeded={showTotalNeeded}
+                  showTotalBooked={showTotalBooked}
                 />
               )}
             </TabsContent>
