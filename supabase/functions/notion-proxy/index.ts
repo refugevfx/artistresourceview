@@ -240,8 +240,6 @@ serve(async (req) => {
       case 'getBookings': {
         // Query Bookings database
         const bookingsDbId = Deno.env.get('NOTION_BOOKINGS_DB_ID');
-        const crewDbId = Deno.env.get('NOTION_CREW_DB_ID');
-        const projectsDbId = Deno.env.get('NOTION_PROJECTS_DB_ID');
         
         if (!bookingsDbId) {
           throw new Error('NOTION_BOOKINGS_DB_ID not configured');
@@ -260,79 +258,11 @@ serve(async (req) => {
         console.log('Fetching bookings, includeHistorical:', includeHistorical);
         const pages = await queryDatabase(bookingsDbId, bookingFilter, notionToken);
         
-        // Collect all unique crew member IDs to fetch their names
-        const crewMemberIds = new Set<string>();
-        const projectIds = new Set<string>();
-        
-        pages.forEach(page => {
-          const crewId = getRelationIds(page.properties['Crew Member'])?.[0];
-          const projectId = getRelationIds(page.properties['Projects Leadership'])?.[0];
-          if (crewId) crewMemberIds.add(crewId);
-          if (projectId) projectIds.add(projectId);
-        });
-        
-        // Fetch crew member names
-        const crewNameMap = new Map<string, string>();
-        if (crewDbId && crewMemberIds.size > 0) {
-          try {
-            // Fetch each crew member page to get their name
-            const crewPromises = Array.from(crewMemberIds).map(async (id) => {
-              try {
-                const pageData = await notionRequest(`/pages/${id}`, 'GET', undefined, notionToken);
-                const props = pageData.properties;
-                // Try First Name + Last Name, otherwise fall back to Name
-                const firstName = getRichText(props['First Name']) || '';
-                const lastName = getRichText(props['Last Name']) || '';
-                const fullName = firstName && lastName 
-                  ? `${firstName} ${lastName}`.trim()
-                  : getTitle(props['Name']) || getRichText(props['Name']) || 'Unknown';
-                return { id, name: fullName };
-              } catch (e) {
-                console.error(`Failed to fetch crew member ${id}:`, e);
-                return { id, name: 'Unknown' };
-              }
-            });
-            const crewResults = await Promise.all(crewPromises);
-            crewResults.forEach(({ id, name }) => crewNameMap.set(id, name));
-          } catch (e) {
-            console.error('Error fetching crew members:', e);
-          }
-        }
-        
-        // Fetch project names
-        const projectNameMap = new Map<string, string>();
-        if (projectsDbId && projectIds.size > 0) {
-          try {
-            const projectPromises = Array.from(projectIds).map(async (id) => {
-              try {
-                const pageData = await notionRequest(`/pages/${id}`, 'GET', undefined, notionToken);
-                const name = getTitle(pageData.properties['Project Name']) || 'Unknown Project';
-                return { id, name };
-              } catch (e) {
-                console.error(`Failed to fetch project ${id}:`, e);
-                return { id, name: 'Unknown Project' };
-              }
-            });
-            const projectResults = await Promise.all(projectPromises);
-            projectResults.forEach(({ id, name }) => projectNameMap.set(id, name));
-          } catch (e) {
-            console.error('Error fetching projects:', e);
-          }
-        }
-        
-        // Debug: log first booking's property names and allocation field
-        if (pages[0]) {
-          const propNames = Object.keys(pages[0].properties);
-          console.log('Booking property names:', propNames);
-          const allocationFields = propNames.filter(p => p.toLowerCase().includes('alloc'));
-          console.log('Allocation-related fields:', allocationFields);
-          allocationFields.forEach(field => {
-            console.log(`Field "${field}":`, JSON.stringify(pages[0].properties[field]));
-          });
-        }
-        
         const bookings = pages.map((page) => {
           const props = page.properties;
+          
+          // Use the booking Name directly - no extra lookups
+          const bookingName = getTitle(props['Name']);
           
           // Get department from Department property (select or rollup)
           let department = 'Unknown';
@@ -359,16 +289,13 @@ serve(async (req) => {
             allocation = props['Allocation'].number;
           }
 
-          const crewMemberId = getRelationIds(props['Crew Member'])?.[0] || null;
           const projectId = getRelationIds(props['Projects Leadership'])?.[0] || null;
 
           return {
             id: page.id,
-            name: getTitle(props['Name']),
-            crewMemberId,
-            crewMemberName: crewMemberId ? crewNameMap.get(crewMemberId) || 'Unknown' : 'Unknown',
+            name: bookingName,
+            crewMemberName: bookingName, // Use booking name as display name
             projectId,
-            projectName: projectId ? projectNameMap.get(projectId) || 'Unknown Project' : 'Unknown Project',
             department: mapDepartment(department),
             region: mapRegion(region),
             startDate: getDate(props['Start Date']),
@@ -377,14 +304,7 @@ serve(async (req) => {
           };
         }).filter(b => b.startDate && b.endDate);
 
-        // Debug: log booking sample with allocation
-        console.log('Bookings sample:', bookings.slice(0, 3).map(b => ({
-          name: b.name,
-          crewMemberName: b.crewMemberName,
-          department: b.department,
-          allocation: b.allocationPercent,
-          dates: `${b.startDate} to ${b.endDate}`
-        })));
+        console.log('Bookings count:', bookings.length);
 
         return new Response(JSON.stringify({ bookings }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
