@@ -135,6 +135,10 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
     const episodeMap = new Map<string, NotionEpisode>();
     
     budgets.forEach(budget => {
+      // Count how many episodes this budget is attached to
+      // If episodeIds has multiple entries, multiply man-days by that count
+      const linkedEpisodeCount = budget.episodeIds?.length || 1;
+      
       // Use episodeId to find the episode and its parent project
       const episodeId = budget.episodeId || budget.episodeIds?.[0];
       const parentProjectId = episodeId ? episodeToProjectMap.get(episodeId) : budget.projectId;
@@ -143,12 +147,18 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
       const key = episodeId || budget.id;
       const existing = episodeMap.get(key);
       
+      // Multiply man-days by the number of episodes this budget covers
+      const scaledAnimationDays = budget.animationDays * linkedEpisodeCount;
+      const scaledCgDays = budget.cgDays * linkedEpisodeCount;
+      const scaledCompositingDays = budget.compositingDays * linkedEpisodeCount;
+      const scaledFxDays = budget.fxDays * linkedEpisodeCount;
+      
       if (existing) {
         // Aggregate man-days for same episode
-        existing.animationDays += budget.animationDays;
-        existing.cgDays += budget.cgDays;
-        existing.compositingDays += budget.compositingDays;
-        existing.fxDays += budget.fxDays;
+        existing.animationDays += scaledAnimationDays;
+        existing.cgDays += scaledCgDays;
+        existing.compositingDays += scaledCompositingDays;
+        existing.fxDays += scaledFxDays;
       } else {
         episodeMap.set(key, {
           id: episodeId || budget.id,
@@ -157,10 +167,10 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
           projectId: parentProjectId || '',
           startDate: episodeData?.startDate || null,
           endDate: episodeData?.endDate || null,
-          animationDays: budget.animationDays,
-          cgDays: budget.cgDays,
-          compositingDays: budget.compositingDays,
-          fxDays: budget.fxDays,
+          animationDays: scaledAnimationDays,
+          cgDays: scaledCgDays,
+          compositingDays: scaledCompositingDays,
+          fxDays: scaledFxDays,
         });
       }
     });
