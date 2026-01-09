@@ -182,10 +182,11 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
     return Array.from(episodeMap.values());
   }, []);
 
-  const fetchBookings = useCallback(async () => {
+  const fetchBookings = useCallback(async (statuses: ProjectStatus[]) => {
     console.log('Fetching bookings from Notion...');
+    const includeHistorical = statuses.includes('Completed');
     const { data, error } = await supabase.functions.invoke('notion-proxy', {
-      body: { action: 'getBookings' },
+      body: { action: 'getBookings', includeHistorical },
     });
 
     if (error) throw new Error(error.message);
@@ -245,7 +246,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
 
     try {
       console.log('Refreshing bookings only...');
-      const bookingsData = await fetchBookings();
+      const bookingsData = await fetchBookings(filters.statuses);
       setBookings(bookingsData);
 
       // Recalculate with existing episodes + new bookings
@@ -279,7 +280,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
       // Fetch projects first, then budgets (which needs project data)
       const [projectsData, bookingsData] = await Promise.all([
         fetchProjects(),
-        fetchBookings(),
+        fetchBookings(filters.statuses),
       ]);
       
       // Fetch budgets with project data for mapping
