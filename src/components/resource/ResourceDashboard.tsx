@@ -1,11 +1,13 @@
-import { RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { RefreshCw, Eye, EyeOff, BarChart3, Table2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNotionResourceData } from '@/hooks/useNotionResourceData';
 import { ResourceChart } from './ResourceChart';
+import { ResourceDataTable } from './ResourceDataTable';
 import { FilterControls } from './FilterControls';
 import { CurveSettingsDialog } from './CurveSettingsDialog';
 
@@ -104,55 +106,83 @@ export function ResourceDashboard() {
         </Card>
       )}
 
-      {/* Chart */}
+      {/* Chart/Table Tabs */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center justify-between">
-            <span>
-              {filters.showBooked ? 'Remaining Artist Need' : 'Total Artist Need'}
-            </span>
-            {/* Peak indicators */}
-            <div className="flex gap-4 text-sm font-normal">
-              <span className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-blue-500" />
-                ANM Peak: {peaks.animation.toFixed(1)}
-              </span>
-              <span className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-amber-500" />
-                CG Peak: {peaks.cg.toFixed(1)}
-              </span>
-              <span className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                COMP Peak: {peaks.compositing.toFixed(1)}
-              </span>
-              <span className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                FX Peak: {peaks.fx.toFixed(1)}
-              </span>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="h-[400px] flex items-center justify-center">
-              <div className="space-y-4 w-full">
-                <Skeleton className="h-[300px] w-full" />
-                <div className="flex justify-center gap-8">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-4 w-20" />
-                </div>
+        <Tabs defaultValue="chart" className="w-full">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <TabsList>
+                <TabsTrigger value="chart" className="flex items-center gap-1">
+                  <BarChart3 className="h-4 w-4" />
+                  Chart
+                </TabsTrigger>
+                <TabsTrigger value="table" className="flex items-center gap-1">
+                  <Table2 className="h-4 w-4" />
+                  Data Table
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Peak indicators */}
+              <div className="flex gap-4 text-sm font-normal">
+                <span className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                  ANM: {peaks.animation.toFixed(1)}
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-amber-500" />
+                  CG: {peaks.cg.toFixed(1)}
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  COMP: {peaks.compositing.toFixed(1)}
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  FX: {peaks.fx.toFixed(1)}
+                </span>
               </div>
             </div>
-          ) : (
-            <ResourceChart 
-              dataPoints={dataPoints}
-              showBooked={filters.showBooked}
-              peaks={peaks}
-            />
-          )}
-        </CardContent>
+          </CardHeader>
+          <CardContent>
+            <TabsContent value="chart" className="mt-0">
+              {isLoading ? (
+                <div className="h-[400px] flex items-center justify-center">
+                  <div className="space-y-4 w-full">
+                    <Skeleton className="h-[300px] w-full" />
+                    <div className="flex justify-center gap-8">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <ResourceChart 
+                  dataPoints={dataPoints}
+                  showBooked={filters.showBooked}
+                  peaks={peaks}
+                />
+              )}
+            </TabsContent>
+            
+            <TabsContent value="table" className="mt-0">
+              {isLoading ? (
+                <div className="h-[400px] flex items-center justify-center">
+                  <Skeleton className="h-[300px] w-full" />
+                </div>
+              ) : (
+                <ResourceDataTable
+                  projects={projects}
+                  episodes={episodes}
+                  filters={filters}
+                  curveSettings={settings.curves}
+                  zoom={settings.zoom}
+                />
+              )}
+            </TabsContent>
+          </CardContent>
+        </Tabs>
       </Card>
 
       {/* Summary Stats */}
