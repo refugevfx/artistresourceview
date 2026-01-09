@@ -45,7 +45,10 @@ export function FilterControls({
   onFiltersChange,
   onZoomChange,
 }: FilterControlsProps) {
-  const selectedProject = projects.find(p => p.id === filters.projectId);
+  // Filter out child projects (those with a parentId)
+  const topLevelProjects = projects.filter(p => !p.parentId);
+  
+  const selectedProject = topLevelProjects.find(p => p.id === filters.projectId);
   const selectedEpisode = episodes.find(e => e.id === filters.episodeId);
   
   // Get episodes for selected project
@@ -81,7 +84,7 @@ export function FilterControls({
             <span className="font-medium">All Projects</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          {projects.map(project => (
+          {topLevelProjects.map(project => (
             <DropdownMenuItem
               key={project.id}
               onClick={() => onFiltersChange({ projectId: project.id, episodeId: null })}
