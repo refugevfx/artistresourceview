@@ -243,15 +243,8 @@ serve(async (req) => {
           throw new Error('NOTION_BOOKINGS_DB_ID not configured');
         }
 
-        // Filter out expired bookings unless viewing historical/completed projects
-        const bookingFilter = includeHistorical ? undefined : {
-          and: [
-            {
-              property: 'End Date',
-              date: { on_or_after: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] }
-            }
-          ]
-        };
+        // Fetch all bookings - filtering by project/date happens client-side
+        const bookingFilter = undefined;
 
         console.log('Fetching bookings, includeHistorical:', includeHistorical);
         const pages = await queryDatabase(bookingsDbId, bookingFilter, notionToken);
