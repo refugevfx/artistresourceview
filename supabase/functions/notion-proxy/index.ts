@@ -144,8 +144,8 @@ serve(async (req) => {
 
         const statusFilter = filter?.statuses?.length > 0 ? {
           or: filter.statuses.map((status: string) => ({
-            property: 'Project Status',
-            select: { equals: status }
+            property: 'Status',
+            status: { equals: status }
           }))
         } : undefined;
 
@@ -155,11 +155,12 @@ serve(async (req) => {
           const props = page.properties;
           return {
             id: page.id,
-            name: getTitle(props['Name'] || props['Project Name']),
-            status: getSelect(props['Project Status']) || 'Unknown',
-            startDate: getDate(props['Date'])?.split?.('/')[0] || getDate(props['Start Date']),
-            endDate: props['Date']?.date?.end || getDate(props['End Date']),
-            episodeIds: getRelationIds(props['Episode']),
+            name: getTitle(props['Project Name']),
+            status: props['Status']?.status?.name || 'Unknown',
+            startDate: props['Date']?.date?.start || null,
+            endDate: props['Date']?.date?.end || null,
+            studio: getSelect(props['Studio']),
+            episodeCount: getNumber(props['Episode Count']),
           };
         });
 
