@@ -230,8 +230,8 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
     // Calculate booked artists
     const dailyBooked = calculateBookedArtists(bks, flts);
 
-    // Get timeline bounds and aggregate to monthly
-    const { start, end } = getTimelineBounds(zoom);
+    // Get timeline bounds (pass filtered episodes for smart historical detection)
+    const { start, end } = getTimelineBounds(zoom, filteredEpisodes);
     const points = aggregateToMonthly(allDailyNeeds, dailyBooked, start, end);
     
     // Calculate peaks
