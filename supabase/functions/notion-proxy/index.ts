@@ -257,6 +257,17 @@ serve(async (req) => {
         console.log('Fetching bookings, includeHistorical:', includeHistorical);
         const pages = await queryDatabase(bookingsDbId, bookingFilter, notionToken);
         
+        // Debug: log first booking's property names and allocation field
+        if (pages[0]) {
+          const propNames = Object.keys(pages[0].properties);
+          console.log('Booking property names:', propNames);
+          const allocationFields = propNames.filter(p => p.toLowerCase().includes('alloc'));
+          console.log('Allocation-related fields:', allocationFields);
+          allocationFields.forEach(field => {
+            console.log(`Field "${field}":`, JSON.stringify(pages[0].properties[field]));
+          });
+        }
+        
         const bookings = pages.map((page) => {
           const props = page.properties;
           
