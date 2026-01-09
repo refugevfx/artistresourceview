@@ -9,7 +9,8 @@ import {
   ResponsiveContainer,
   Legend,
   LabelList,
-  ReferenceLine
+  ReferenceLine,
+  Line
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { ResourceDataPoint } from '@/types/resource';
@@ -36,6 +37,7 @@ export function ResourceChart({ dataPoints, showBooked, peaks, animationKey = 0 
   // Allow negative values to show overbooking
   const chartData = dataPoints.map(point => {
     const date = format(parseISO(point.date), 'MMM yyyy');
+    const totalBooked = point.animationBooked + point.cgBooked + point.compositingBooked + point.fxBooked;
     
     if (showBooked) {
       return {
@@ -45,6 +47,7 @@ export function ResourceChart({ dataPoints, showBooked, peaks, animationKey = 0 
         CG: point.cgNeeded - point.cgBooked,
         COMP: point.compositingNeeded - point.compositingBooked,
         FX: point.fxNeeded - point.fxBooked,
+        TOTAL: totalBooked,
       };
     }
     
@@ -55,11 +58,12 @@ export function ResourceChart({ dataPoints, showBooked, peaks, animationKey = 0 
       CG: point.cgNeeded,
       COMP: point.compositingNeeded,
       FX: point.fxNeeded,
+      TOTAL: totalBooked,
     };
   });
 
   // Calculate Y axis bounds - allow negative values for overbooking
-  const allValues = chartData.flatMap(d => [d.ANM, d.CG, d.COMP, d.FX]);
+  const allValues = chartData.flatMap(d => [d.ANM, d.CG, d.COMP, d.FX, d.TOTAL]);
   const maxValue = Math.max(...allValues, 1);
   const minValue = Math.min(...allValues, 0);
   const yAxisMax = Math.ceil(maxValue * 1.1); // Add 10% padding
@@ -242,6 +246,19 @@ export function ResourceChart({ dataPoints, showBooked, peaks, animationKey = 0 
           >
             <LabelList dataKey="FX" content={renderCustomLabel} />
           </Area>
+          <Line
+            type="monotone"
+            dataKey="TOTAL"
+            name="Total Booked"
+            stroke="hsl(var(--muted-foreground))"
+            strokeWidth={2}
+            strokeDasharray="4 4"
+            dot={false}
+            activeDot={{ r: 5, fill: 'hsl(var(--muted-foreground))' }}
+            isAnimationActive={true}
+            animationDuration={800}
+            animationEasing="ease-out"
+          />
         </AreaChart>
       </ResponsiveContainer>
     </div>
