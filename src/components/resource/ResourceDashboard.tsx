@@ -98,18 +98,18 @@ export function ResourceDashboard() {
             disabled={isLoading || isRefreshingBookings}
           >
             <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshingBookings ? 'animate-spin' : ''}`} />
-            Update
+            Update Bookings
           </Button>
           
           <Button 
             variant="ghost" 
-            size="sm"
-            className="h-6 text-[10px] px-2"
+            size="icon"
+            className="h-6 w-6"
             onClick={refreshAll}
             disabled={isLoading || isRefreshingBookings}
+            title="Refresh All"
           >
-            <RefreshCw className={`h-3 w-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh All
+            <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </div>
