@@ -107,7 +107,6 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
 
   const totalDays = differenceInDays(timelineEnd, timelineStart) + 1;
   const ROW_HEIGHT = 28;
-  const NAME_WIDTH = 140;
 
   // Calculate position and width for a booking bar
   const getBarStyle = (booking: NotionBooking) => {
@@ -149,84 +148,67 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
             {rows.map((row) => (
               <div 
                 key={row.crewMemberId} 
-                className="flex border-b border-border/50 hover:bg-muted/30"
+                className="border-b border-border/50 hover:bg-muted/30 relative"
                 style={{ height: ROW_HEIGHT }}
               >
-                {/* Name column */}
-                <div 
-                  className="shrink-0 px-2 flex items-center gap-1.5 border-r border-border/50"
-                  style={{ width: NAME_WIDTH }}
-                >
-                  <div 
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: DEPARTMENT_COLORS[row.department] }}
-                  />
-                  <span className="text-[10px] truncate" title={row.crewMemberName || 'Unknown'}>
-                    {row.crewMemberName || 'Unknown'}
-                  </span>
-                </div>
-
-                {/* Timeline area */}
-                <div className="flex-1 relative">
-                  {/* Month grid lines */}
-                  <div className="absolute inset-0 flex pointer-events-none">
-                    {months.map((month, idx) => {
-                      const monthStart = startOfMonth(month);
-                      const monthEnd = endOfMonth(month);
-                      const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
-                      const width = (daysInMonth / totalDays) * 100;
-                      return (
-                        <div
-                          key={idx}
-                          className="border-l border-border/30 first:border-l-0"
-                          style={{ width: `${width}%` }}
-                        />
-                      );
-                    })}
-                  </div>
-
-                  {/* Booking bars */}
-                  {row.bookings.map((booking) => {
-                    const style = getBarStyle(booking);
-                    if (!style) return null;
-
-                    const opacity = booking.allocationPercent < 1 ? 0.6 : 1;
-
+                {/* Month grid lines */}
+                <div className="absolute inset-0 flex pointer-events-none">
+                  {months.map((month, idx) => {
+                    const monthStart = startOfMonth(month);
+                    const monthEnd = endOfMonth(month);
+                    const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
+                    const width = (daysInMonth / totalDays) * 100;
                     return (
-                      <Tooltip key={booking.id}>
-                        <TooltipTrigger asChild>
-                          <div
-                            className="absolute top-1 h-5 rounded-sm cursor-pointer transition-all hover:brightness-110 hover:scale-y-110"
-                            style={{
-                              left: style.left,
-                              width: style.width,
-                              backgroundColor: DEPARTMENT_COLORS[row.department],
-                              opacity,
-                            }}
-                          >
-                            <span className="px-1 text-[9px] text-white truncate block leading-5 font-medium">
-                              {row.crewMemberName || 'Unknown'}
-                            </span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="text-xs">
-                          <div className="space-y-0.5">
-                            <div className="font-medium">{row.crewMemberName || 'Unknown'}</div>
-                            <div>{booking.projectName}</div>
-                            <div className="text-muted-foreground">
-                              {format(parseISO(booking.startDate), 'MMM d')} - {format(parseISO(booking.endDate), 'MMM d, yyyy')}
-                            </div>
-                            {booking.allocationPercent < 1 && (
-                              <div className="text-muted-foreground">
-                                {Math.round(booking.allocationPercent * 100)}% allocated
-                              </div>
-                            )}
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
+                      <div
+                        key={idx}
+                        className="border-l border-border/30 first:border-l-0"
+                        style={{ width: `${width}%` }}
+                      />
                     );
                   })}
                 </div>
+
+                {/* Booking bars */}
+                {row.bookings.map((booking) => {
+                  const style = getBarStyle(booking);
+                  if (!style) return null;
+
+                  const opacity = booking.allocationPercent < 1 ? 0.6 : 1;
+
+                  return (
+                    <Tooltip key={booking.id}>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="absolute top-1 h-5 rounded-sm cursor-pointer transition-all hover:brightness-110 hover:scale-y-110"
+                          style={{
+                            left: style.left,
+                            width: style.width,
+                            backgroundColor: DEPARTMENT_COLORS[row.department],
+                            opacity,
+                          }}
+                        >
+                          <span className="px-1 text-[9px] text-white truncate block leading-5 font-medium">
+                            {row.crewMemberName || 'Unknown'}
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        <div className="space-y-0.5">
+                          <div className="font-medium">{row.crewMemberName || 'Unknown'}</div>
+                          <div>{booking.projectName}</div>
+                          <div className="text-muted-foreground">
+                            {format(parseISO(booking.startDate), 'MMM d')} - {format(parseISO(booking.endDate), 'MMM d, yyyy')}
+                          </div>
+                          {booking.allocationPercent < 1 && (
+                            <div className="text-muted-foreground">
+                              {Math.round(booking.allocationPercent * 100)}% allocated
+                            </div>
+                          )}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
               </div>
             ))}
           </div>
@@ -234,11 +216,6 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
 
         {/* Timeline footer - dates at bottom like chart view */}
         <div className="flex border-t border-border">
-          <div className="shrink-0" style={{ width: NAME_WIDTH }}>
-            <div className="h-6 px-2 flex items-center text-[10px] font-medium text-muted-foreground">
-              Crew Member
-            </div>
-          </div>
           <div className="flex-1 flex relative">
             {months.map((month, idx) => {
               const monthStart = startOfMonth(month);
