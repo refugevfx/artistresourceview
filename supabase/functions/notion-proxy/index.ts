@@ -145,7 +145,7 @@ serve(async (req) => {
         const statusFilter = filter?.statuses?.length > 0 ? {
           or: filter.statuses.map((status: string) => ({
             property: 'Status',
-            status: { equals: status }
+            select: { equals: status }
           }))
         } : undefined;
 
@@ -156,7 +156,7 @@ serve(async (req) => {
           return {
             id: page.id,
             name: getTitle(props['Project Name']),
-            status: props['Status']?.status?.name || 'Unknown',
+            status: getSelect(props['Status']) || 'Unknown',
             startDate: props['Date']?.date?.start || null,
             endDate: props['Date']?.date?.end || null,
             studio: getSelect(props['Studio']),
@@ -176,22 +176,22 @@ serve(async (req) => {
           throw new Error('NOTION_BIDS_DB_ID not configured');
         }
 
-        // Filter for Awarded or Estimate budgets
-        const budgetFilter = {
-          or: [
-            { property: 'Bid Status', status: { equals: 'Awarded' } },
-            { property: 'Bid Status', status: { equals: 'Estimate' } },
-          ]
-        };
-
-        const pages = await queryDatabase(bidsDbId, budgetFilter, notionToken);
+        // Get all bids without filter first, then filter in code
+        const pages = await queryDatabase(bidsDbId, undefined, notionToken);
+        
+        console.log('Bids properties sample:', pages[0]?.properties ? Object.keys(pages[0].properties) : 'no pages');
         
         const budgets = pages.map((page) => {
           const props = page.properties;
+          
+          // Try multiple possible status property names
+          const statusProp = props['Bid Status'] || props['Status'] || props['Bid ...'];
+          const status = statusProp?.status?.name || statusProp?.select?.name || null;
+          
           return {
             id: page.id,
             name: getTitle(props['Bid Name']),
-            status: props['Bid Status']?.status?.name || null,
+            status: status,
             projectId: getRelationIds(props['Parent'])?.[0] || null,
             episodeCode: getRichText(props['Episodes']) || getTitle(props['Episodes']),
             animationDays: getNumber(props['ANM Award']),
@@ -199,7 +199,7 @@ serve(async (req) => {
             compositingDays: getNumber(props['COMP Award']),
             fxDays: getNumber(props['FX Award']),
           };
-        });
+        }).filter(b => b.status === 'Awarded' || b.status === 'Estimate');
 
         return new Response(JSON.stringify({ budgets }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
