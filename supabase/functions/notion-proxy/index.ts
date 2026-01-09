@@ -224,9 +224,7 @@ serve(async (req) => {
             fxDays: getNumericValue(props['FX Award']),
           };
         }).filter(b => {
-          const activeStatuses = ['Awarded', 'Estimate', 'Bid Sent'];
-          const historicalStatuses = [...activeStatuses, 'Completed'];
-          const allowedStatuses = includeHistorical ? historicalStatuses : activeStatuses;
+          const allowedStatuses = ['Awarded', 'Estimate', 'Bid Sent', 'Completed'];
           return allowedStatuses.includes(b.status);
         });
 
