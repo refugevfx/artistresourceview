@@ -63,7 +63,7 @@ export function ResourceDashboard() {
           </p>
         </div>
         
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 mr-8">
           {/* Show Booked Toggle */}
           <div className="flex items-center gap-1.5 mr-2">
             <Switch
