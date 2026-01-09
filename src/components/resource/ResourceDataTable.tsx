@@ -190,7 +190,7 @@ export function ResourceDataTable({
   };
 
   return (
-    <ScrollArea className="w-full h-[280px] whitespace-nowrap rounded-md border">
+    <ScrollArea className="w-full h-[310px] whitespace-nowrap rounded-md border">
       <Table className="text-[9px]">
         <TableHeader>
           <TableRow className="h-6">

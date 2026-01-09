@@ -118,7 +118,7 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex flex-col h-[280px]">
+      <div className="flex flex-col h-[310px]">
         {/* Rows */}
         <ScrollArea className="flex-1">
           <div className="min-w-full">
