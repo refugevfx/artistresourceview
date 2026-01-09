@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
-import { format, parseISO, differenceInDays, isWithinInterval, addMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { useMemo } from 'react';
+import { format, parseISO, differenceInDays, addMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { NotionBooking, TimelineZoom, ResourceFilters, Department } from '@/types/resource';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getTimelineBounds } from '@/lib/resourceCalculations';
 
 const DEPARTMENT_COLORS: Record<Department, string> = {
   Animation: '#4FC3F7',
@@ -66,37 +67,13 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
     });
   }, [filteredBookings]);
 
-  // Calculate timeline bounds
+  // Calculate timeline bounds using the same function as the chart
   const { timelineStart, timelineEnd, months } = useMemo(() => {
-    const now = new Date();
-    let start: Date;
-    let end: Date;
-
-    switch (zoom) {
-      case 'month':
-        start = startOfMonth(now);
-        end = endOfMonth(addMonths(now, 2));
-        break;
-      case 'quarter':
-        start = startOfMonth(now);
-        end = endOfMonth(addMonths(now, 5));
-        break;
-      case 'year':
-        start = startOfMonth(now);
-        end = endOfMonth(addMonths(now, 11));
-        break;
-      case '2year':
-        start = startOfMonth(now);
-        end = endOfMonth(addMonths(now, 23));
-        break;
-      default:
-        start = startOfMonth(now);
-        end = endOfMonth(addMonths(now, 11));
-    }
+    const { start, end } = getTimelineBounds(zoom);
 
     // Generate month markers
     const monthList: Date[] = [];
-    let current = start;
+    let current = startOfMonth(start);
     while (current <= end) {
       monthList.push(current);
       current = addMonths(current, 1);
