@@ -176,12 +176,11 @@ serve(async (req) => {
           throw new Error('NOTION_BIDS_DB_ID not configured');
         }
 
-        // Filter for Awarded, Estimate, or active budgets
+        // Filter for Awarded or Estimate budgets
         const budgetFilter = {
           or: [
-            { property: 'Bid Status', select: { equals: 'Awarded' } },
-            { property: 'Bid Status', select: { equals: 'Estimate' } },
-            { property: 'Bid Status', select: { equals: 'Bid Sent' } },
+            { property: 'Bid Status', status: { equals: 'Awarded' } },
+            { property: 'Bid Status', status: { equals: 'Estimate' } },
           ]
         };
 
@@ -192,15 +191,13 @@ serve(async (req) => {
           return {
             id: page.id,
             name: getTitle(props['Bid Name']),
-            status: getSelect(props['Bid Status']),
+            status: props['Bid Status']?.status?.name || null,
             projectId: getRelationIds(props['Parent'])?.[0] || null,
             episodeCode: getRichText(props['Episodes']) || getTitle(props['Episodes']),
-            animationDays: getNumber(props['ANM Days']),
-            cgDays: getNumber(props['CG Days']),
-            compositingDays: getNumber(props['COMP Days']),
-            fxDays: getNumber(props['FX Days']),
-            startDate: getDate(props['Ep Start Date']),
-            endDate: getDate(props['Ep End Date']),
+            animationDays: getNumber(props['ANM Award']),
+            cgDays: getNumber(props['CG Award']),
+            compositingDays: getNumber(props['COMP Award']),
+            fxDays: getNumber(props['FX Award']),
           };
         });
 
@@ -231,18 +228,29 @@ serve(async (req) => {
         const bookings = pages.map((page) => {
           const props = page.properties;
           
-          // Get department from rollup
-          const deptRollup = getRollup(props['Department']);
+          // Get department from Department property (select or rollup)
           let department = 'Unknown';
-          if (Array.isArray(deptRollup) && deptRollup.length > 0) {
-            department = deptRollup[0]?.select?.name || 'Unknown';
+          if (props['Department']?.select?.name) {
+            department = props['Department'].select.name;
+          } else if (props['Department']?.rollup) {
+            const deptRollup = getRollup(props['Department']);
+            if (Array.isArray(deptRollup) && deptRollup.length > 0) {
+              department = deptRollup[0]?.select?.name || 'Unknown';
+            }
           }
           
-          // Get region from rollup
-          const regionRollup = getRollup(props['Region']);
+          // Get region from Region property
           let region = 'California';
-          if (Array.isArray(regionRollup) && regionRollup.length > 0) {
-            region = regionRollup[0]?.select?.name || 'California';
+          if (props['Region']?.select?.name) {
+            region = props['Region'].select.name;
+          }
+
+          // Get allocation percentage
+          let allocation = 1;
+          if (props['Allocation']?.number !== undefined) {
+            allocation = props['Allocation'].number;
+          } else if (props['Allocation %']?.number !== undefined) {
+            allocation = props['Allocation %'].number;
           }
 
           return {
@@ -254,7 +262,7 @@ serve(async (req) => {
             region: mapRegion(region),
             startDate: getDate(props['Start Date']),
             endDate: getDate(props['End Date']),
-            allocationPercent: getNumber(props['Allocation %']) || 1,
+            allocationPercent: allocation,
           };
         }).filter(b => b.startDate && b.endDate);
 
