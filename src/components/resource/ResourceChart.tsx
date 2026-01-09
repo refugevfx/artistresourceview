@@ -196,7 +196,7 @@ export function ResourceChart({
                 strokeDasharray="4 4"
                 label={{ 
                   value: 'Overbooked', 
-                  position: 'insideBottomRight',
+                  position: 'insideTopRight',
                   fill: 'hsl(var(--destructive))',
                   fontSize: 9
                 }}
