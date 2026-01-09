@@ -19,12 +19,12 @@ export interface DepartmentCurveSettings {
   FX: DistributionCurve;
 }
 
-// Default flat distribution
+// Default department-specific distributions
 export const DEFAULT_CURVE_SETTINGS: DepartmentCurveSettings = {
-  Animation: [0.2, 0.2, 0.2, 0.2, 0.2],
-  CG: [0.2, 0.2, 0.2, 0.2, 0.2],
-  Compositing: [0.2, 0.2, 0.2, 0.2, 0.2],
-  FX: [0.2, 0.2, 0.2, 0.2, 0.2],
+  Animation: [0.10, 0.30, 0.30, 0.20, 0.10], // Front loaded
+  CG: [0.10, 0.30, 0.30, 0.20, 0.10],        // Front loaded
+  Compositing: [0.10, 0.20, 0.30, 0.30, 0.10], // Back loaded
+  FX: [0.01, 0.20, 0.58, 0.20, 0.01],        // Pinched bell curve
 };
 
 // Preset curves
