@@ -21,10 +21,10 @@ interface ResourceChartProps {
 
 // Department colors matching the design reference
 const DEPARTMENT_COLORS = {
-  animation: '#3B82F6', // Blue
-  cg: '#F59E0B', // Amber
-  compositing: '#10B981', // Green
-  fx: '#EF4444', // Red
+  animation: '#4FC3F7', // Light cyan blue
+  cg: '#FF9800', // Orange
+  compositing: '#66BB6A', // Green
+  fx: '#EF5350', // Coral red
 };
 
 export function ResourceChart({ dataPoints, showBooked, peaks }: ResourceChartProps) {
