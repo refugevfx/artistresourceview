@@ -223,7 +223,7 @@ serve(async (req) => {
             compositingDays: getNumericValue(props['COMP Award']),
             fxDays: getNumericValue(props['FX Award']),
           };
-        }).filter(b => b.status === 'Awarded' || b.status === 'Estimate');
+        }).filter(b => b.status === 'Awarded' || b.status === 'Estimate' || b.status === 'Bid Sent');
 
         console.log('Budgets sample:', budgets.slice(0, 2));
 
