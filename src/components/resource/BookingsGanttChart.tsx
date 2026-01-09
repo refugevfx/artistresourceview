@@ -60,7 +60,9 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
       const deptOrder = ['Animation', 'CG', 'Compositing', 'FX'];
       const deptDiff = deptOrder.indexOf(a.department) - deptOrder.indexOf(b.department);
       if (deptDiff !== 0) return deptDiff;
-      return a.crewMemberName.localeCompare(b.crewMemberName);
+      const nameA = a.crewMemberName || '';
+      const nameB = b.crewMemberName || '';
+      return nameA.localeCompare(nameB);
     });
   }, [filteredBookings]);
 
