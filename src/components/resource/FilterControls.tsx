@@ -54,10 +54,15 @@ export function FilterControls({
   const selectedProject = filteredProjects.find(p => p.id === filters.projectId);
   const selectedEpisode = episodes.find(e => e.id === filters.episodeId);
   
-  // Get episodes for selected project
-  const projectEpisodes = filters.projectId 
+  // Get episodes for selected project, sorted by code/name
+  const projectEpisodes = (filters.projectId 
     ? episodes.filter(e => e.projectId === filters.projectId)
-    : episodes;
+    : episodes
+  ).sort((a, b) => {
+    const aKey = a.code || a.name || '';
+    const bKey = b.code || b.name || '';
+    return aKey.localeCompare(bKey, undefined, { numeric: true });
+  });
 
   return (
     <div className="flex flex-wrap items-center gap-1">
