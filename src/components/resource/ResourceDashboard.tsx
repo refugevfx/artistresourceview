@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Toggle } from '@/components/ui/toggle';
 import { useNotionResourceData } from '@/hooks/useNotionResourceData';
 import { ResourceChart } from './ResourceChart';
 import { ResourceDataTable } from './ResourceDataTable';
@@ -31,44 +30,44 @@ export function ResourceDashboard() {
     refreshAll,
   } = useNotionResourceData();
 
-  const [showTotalNeeded, setShowTotalNeeded] = useState(false);
-  const [showTotalBooked, setShowTotalBooked] = useState(false);
-  const [visibleDepartments, setVisibleDepartments] = useState({
+  const [visibleSeries, setVisibleSeries] = useState({
     ANM: true,
     CG: true,
     COMP: true,
     FX: true,
+    TOTAL_NEEDED: false,
+    TOTAL_BOOKED: false,
   });
 
   const handleShowBookedToggle = () => {
     setFilters({ showBooked: !filters.showBooked });
   };
 
-  const handleToggleDepartment = (dept: 'ANM' | 'CG' | 'COMP' | 'FX') => {
-    setVisibleDepartments(prev => ({ ...prev, [dept]: !prev[dept] }));
+  const handleToggleSeries = (series: keyof typeof visibleSeries) => {
+    setVisibleSeries(prev => ({ ...prev, [series]: !prev[series] }));
   };
 
   return (
-    <div className="w-full min-h-screen bg-background p-3 space-y-3">
+    <div className="w-full min-h-screen bg-background p-2 space-y-2">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Resource Curves</h1>
-          <p className="text-xs text-muted-foreground">
+          <h1 className="text-lg font-bold text-foreground">Resource Curves</h1>
+          <p className="text-[10px] text-muted-foreground">
             Artist resource needs over time
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Show Booked Toggle */}
-          <div className="flex items-center gap-2 mr-2">
+          <div className="flex items-center gap-1.5 mr-2">
             <Switch
               id="show-booked"
               checked={filters.showBooked}
               onCheckedChange={handleShowBookedToggle}
-              className="scale-90"
+              className="scale-75"
             />
-            <Label htmlFor="show-booked" className="text-xs cursor-pointer flex items-center gap-1">
+            <Label htmlFor="show-booked" className="text-[10px] cursor-pointer flex items-center gap-0.5">
               {filters.showBooked ? (
                 <>
                   <Eye className="h-3 w-3" />
@@ -91,7 +90,7 @@ export function ResourceDashboard() {
           <Button 
             variant="outline" 
             size="sm"
-            className="h-7 text-xs"
+            className="h-6 text-[10px] px-2"
             onClick={refreshBookingsOnly}
             disabled={isLoading || isRefreshingBookings}
           >
@@ -102,7 +101,7 @@ export function ResourceDashboard() {
           <Button 
             variant="ghost" 
             size="sm"
-            className="h-7 text-xs"
+            className="h-6 text-[10px] px-2"
             onClick={refreshAll}
             disabled={isLoading || isRefreshingBookings}
           >
@@ -114,7 +113,7 @@ export function ResourceDashboard() {
 
       {/* Filters */}
       <Card>
-        <CardContent className="py-2 px-3">
+        <CardContent className="py-1.5 px-2">
           <FilterControls
             projects={projects}
             episodes={episodes}
@@ -129,8 +128,8 @@ export function ResourceDashboard() {
       {/* Error State */}
       {error && (
         <Card className="border-destructive">
-          <CardContent className="py-2 px-3">
-            <p className="text-destructive text-xs">{error}</p>
+          <CardContent className="py-1.5 px-2">
+            <p className="text-destructive text-[10px]">{error}</p>
           </CardContent>
         </Card>
       )}
@@ -138,65 +137,41 @@ export function ResourceDashboard() {
       {/* Chart/Table Tabs */}
       <Card>
         <Tabs defaultValue="chart" className="w-full">
-          <CardHeader className="py-2 px-3">
+          <CardHeader className="py-1.5 px-2">
             <div className="flex items-center justify-between">
-              <TabsList className="h-7">
-                <TabsTrigger value="chart" className="h-6 text-xs px-2 flex items-center gap-1">
+              <TabsList className="h-6">
+                <TabsTrigger value="chart" className="h-5 text-[10px] px-2 flex items-center gap-1">
                   <BarChart3 className="h-3 w-3" />
                   Chart
                 </TabsTrigger>
-                <TabsTrigger value="table" className="h-6 text-xs px-2 flex items-center gap-1">
+                <TabsTrigger value="table" className="h-5 text-[10px] px-2 flex items-center gap-1">
                   <Table2 className="h-3 w-3" />
                   Data Table
                 </TabsTrigger>
               </TabsList>
               
-              <div className="flex items-center gap-3">
-                {/* Total lines toggles */}
-                <div className="flex items-center gap-1">
-                  <Toggle 
-                    pressed={showTotalNeeded} 
-                    onPressedChange={setShowTotalNeeded}
-                    size="sm"
-                    className="h-6 px-2 text-xs data-[state=on]:bg-gray-500/20 gap-1"
-                  >
-                    <div className="w-3 h-0" style={{ borderTop: '1.5px dashed #9CA3AF' }} />
-                    Σ Need
-                  </Toggle>
-                  <Toggle 
-                    pressed={showTotalBooked} 
-                    onPressedChange={setShowTotalBooked}
-                    size="sm"
-                    className="h-6 px-2 text-xs data-[state=on]:bg-blue-500/20 gap-1"
-                  >
-                    <div className="w-3 h-0" style={{ borderTop: '1.5px dashed #60A5FA' }} />
-                    Σ Booked
-                  </Toggle>
-                </div>
-
-                {/* Peak indicators */}
-                <div className="flex gap-2 text-[10px] text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-[#4FC3F7]" />
-                    {peaks.animation.toFixed(1)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-[#FF9800]" />
-                    {peaks.cg.toFixed(1)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-[#66BB6A]" />
-                    {peaks.compositing.toFixed(1)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-[#EF5350]" />
-                    {peaks.fx.toFixed(1)}
-                  </span>
-                </div>
+              {/* Peak indicators */}
+              <div className="flex gap-2 text-[9px] text-muted-foreground">
+                <span className="flex items-center gap-0.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#4FC3F7]" />
+                  {peaks.animation.toFixed(1)}
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#FF9800]" />
+                  {peaks.cg.toFixed(1)}
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#66BB6A]" />
+                  {peaks.compositing.toFixed(1)}
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#EF5350]" />
+                  {peaks.fx.toFixed(1)}
+                </span>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="py-2 px-3">
+          <CardContent className="py-1.5 px-2">
             <TabsContent value="chart" className="mt-0">
               {isLoading ? (
                 <div className="h-[280px] flex items-center justify-center">
@@ -208,10 +183,8 @@ export function ResourceDashboard() {
                   showBooked={filters.showBooked}
                   peaks={peaks}
                   animationKey={animationKey}
-                  showTotalNeeded={showTotalNeeded}
-                  showTotalBooked={showTotalBooked}
-                  visibleDepartments={visibleDepartments}
-                  onToggleDepartment={handleToggleDepartment}
+                  visibleSeries={visibleSeries}
+                  onToggleSeries={handleToggleSeries}
                 />
               )}
             </TabsContent>
@@ -234,50 +207,6 @@ export function ResourceDashboard() {
           </CardContent>
         </Tabs>
       </Card>
-
-      {/* Summary Stats - more compact */}
-      <div className="grid grid-cols-4 gap-2">
-        <Card>
-          <CardContent className="py-2 px-3">
-            <div className="text-lg font-bold text-[#4FC3F7]">
-              {peaks.animation.toFixed(1)}
-            </div>
-            <div className="text-[10px] text-muted-foreground">
-              Peak ANM
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="py-2 px-3">
-            <div className="text-lg font-bold text-[#FF9800]">
-              {peaks.cg.toFixed(1)}
-            </div>
-            <div className="text-[10px] text-muted-foreground">
-              Peak CG
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="py-2 px-3">
-            <div className="text-lg font-bold text-[#66BB6A]">
-              {peaks.compositing.toFixed(1)}
-            </div>
-            <div className="text-[10px] text-muted-foreground">
-              Peak COMP
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="py-2 px-3">
-            <div className="text-lg font-bold text-[#EF5350]">
-              {peaks.fx.toFixed(1)}
-            </div>
-            <div className="text-[10px] text-muted-foreground">
-              Peak FX
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

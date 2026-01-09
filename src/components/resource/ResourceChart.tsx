@@ -8,7 +8,8 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  ReferenceLine
+  ReferenceLine,
+  LabelList
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { ResourceDataPoint } from '@/types/resource';
@@ -18,10 +19,15 @@ interface ResourceChartProps {
   showBooked: boolean;
   peaks: { animation: number; cg: number; compositing: number; fx: number };
   animationKey?: number;
-  showTotalNeeded?: boolean;
-  showTotalBooked?: boolean;
-  visibleDepartments: { ANM: boolean; CG: boolean; COMP: boolean; FX: boolean };
-  onToggleDepartment: (dept: 'ANM' | 'CG' | 'COMP' | 'FX') => void;
+  visibleSeries: {
+    ANM: boolean;
+    CG: boolean;
+    COMP: boolean;
+    FX: boolean;
+    TOTAL_NEEDED: boolean;
+    TOTAL_BOOKED: boolean;
+  };
+  onToggleSeries: (series: keyof ResourceChartProps['visibleSeries']) => void;
 }
 
 // Department colors matching the design reference
@@ -37,10 +43,8 @@ export function ResourceChart({
   showBooked, 
   peaks, 
   animationKey = 0,
-  showTotalNeeded = false,
-  showTotalBooked = false,
-  visibleDepartments,
-  onToggleDepartment
+  visibleSeries,
+  onToggleSeries
 }: ResourceChartProps) {
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
 
@@ -74,18 +78,15 @@ export function ResourceChart({
     };
   });
 
-  // Calculate Y axis bounds - only include visible departments
-  const deptValues = chartData.flatMap(d => [
-    ...(visibleDepartments.ANM ? [d.ANM] : []),
-    ...(visibleDepartments.CG ? [d.CG] : []),
-    ...(visibleDepartments.COMP ? [d.COMP] : []),
-    ...(visibleDepartments.FX ? [d.FX] : []),
+  // Calculate Y axis bounds - only include visible series
+  const allValues = chartData.flatMap(d => [
+    ...(visibleSeries.ANM ? [d.ANM] : []),
+    ...(visibleSeries.CG ? [d.CG] : []),
+    ...(visibleSeries.COMP ? [d.COMP] : []),
+    ...(visibleSeries.FX ? [d.FX] : []),
+    ...(visibleSeries.TOTAL_NEEDED ? [d.TOTAL_NEEDED] : []),
+    ...(visibleSeries.TOTAL_BOOKED ? [d.TOTAL_BOOKED] : []),
   ]);
-  const totalValues = [
-    ...(showTotalNeeded ? chartData.map(d => d.TOTAL_NEEDED) : []),
-    ...(showTotalBooked ? chartData.map(d => d.TOTAL_BOOKED) : []),
-  ];
-  const allValues = [...deptValues, ...totalValues];
   const maxValue = Math.max(...allValues, 1);
   const minValue = Math.min(...allValues, 0);
   const yAxisMax = Math.ceil(maxValue * 1.1);
@@ -114,6 +115,24 @@ export function ResourceChart({
     );
   };
 
+  // Custom label renderer for data points
+  const renderCustomLabel = (props: any) => {
+    const { x, y, value } = props;
+    if (value === 0 || value === undefined) return null;
+    
+    return (
+      <text 
+        x={x} 
+        y={y - 6} 
+        fill="hsl(var(--muted-foreground))"
+        fontSize={8}
+        textAnchor="middle"
+      >
+        {value.toFixed(1)}
+      </text>
+    );
+  };
+
   if (chartData.length === 0) {
     return (
       <div className="h-[280px] flex items-center justify-center text-muted-foreground">
@@ -128,7 +147,7 @@ export function ResourceChart({
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}
-            margin={{ top: 10, right: 20, left: 10, bottom: 5 }}
+            margin={{ top: 15, right: 20, left: 10, bottom: 5 }}
           >
             <defs>
               <linearGradient id="gradientANM" x1="0" y1="0" x2="0" y2="1">
@@ -179,7 +198,7 @@ export function ResourceChart({
             )}
             <Tooltip content={<CustomTooltip />} />
             
-            {visibleDepartments.ANM && (
+            {visibleSeries.ANM && (
               <Area
                 type="monotone"
                 dataKey="ANM"
@@ -194,9 +213,11 @@ export function ResourceChart({
                 isAnimationActive={true}
                 animationDuration={800}
                 animationEasing="ease-out"
-              />
+              >
+                <LabelList dataKey="ANM" content={renderCustomLabel} />
+              </Area>
             )}
-            {visibleDepartments.CG && (
+            {visibleSeries.CG && (
               <Area
                 type="monotone"
                 dataKey="CG"
@@ -211,9 +232,11 @@ export function ResourceChart({
                 isAnimationActive={true}
                 animationDuration={800}
                 animationEasing="ease-out"
-              />
+              >
+                <LabelList dataKey="CG" content={renderCustomLabel} />
+              </Area>
             )}
-            {visibleDepartments.COMP && (
+            {visibleSeries.COMP && (
               <Area
                 type="monotone"
                 dataKey="COMP"
@@ -228,9 +251,11 @@ export function ResourceChart({
                 isAnimationActive={true}
                 animationDuration={800}
                 animationEasing="ease-out"
-              />
+              >
+                <LabelList dataKey="COMP" content={renderCustomLabel} />
+              </Area>
             )}
-            {visibleDepartments.FX && (
+            {visibleSeries.FX && (
               <Area
                 type="monotone"
                 dataKey="FX"
@@ -245,13 +270,15 @@ export function ResourceChart({
                 isAnimationActive={true}
                 animationDuration={800}
                 animationEasing="ease-out"
-              />
+              >
+                <LabelList dataKey="FX" content={renderCustomLabel} />
+              </Area>
             )}
-            {showTotalNeeded && (
+            {visibleSeries.TOTAL_NEEDED && (
               <Line
                 type="monotone"
                 dataKey="TOTAL_NEEDED"
-                name="Total Needed"
+                name="Σ Need"
                 stroke="#9CA3AF"
                 strokeWidth={1.5}
                 strokeDasharray="4 4"
@@ -262,11 +289,11 @@ export function ResourceChart({
                 animationEasing="ease-out"
               />
             )}
-            {showTotalBooked && (
+            {visibleSeries.TOTAL_BOOKED && (
               <Line
                 type="monotone"
                 dataKey="TOTAL_BOOKED"
-                name="Total Booked"
+                name="Σ Booked"
                 stroke="#60A5FA"
                 strokeWidth={1.5}
                 strokeDasharray="8 4"
@@ -282,67 +309,73 @@ export function ResourceChart({
       </div>
       
       {/* Custom clickable legend */}
-      <div className="flex items-center justify-center gap-4 mt-2">
+      <div className="flex items-center justify-center gap-3 mt-1">
         <button
-          onClick={() => onToggleDepartment('ANM')}
-          className={`flex items-center gap-1.5 text-xs transition-opacity ${
-            visibleDepartments.ANM ? 'opacity-100' : 'opacity-40'
+          onClick={() => onToggleSeries('ANM')}
+          className={`flex items-center gap-1 text-[10px] transition-opacity hover:opacity-80 ${
+            visibleSeries.ANM ? 'opacity-100' : 'opacity-30'
           }`}
         >
           <div 
-            className="w-2.5 h-2.5 rounded-full" 
+            className="w-2 h-2 rounded-full" 
             style={{ backgroundColor: DEPARTMENT_COLORS.animation }}
           />
           <span>ANM</span>
         </button>
         <button
-          onClick={() => onToggleDepartment('CG')}
-          className={`flex items-center gap-1.5 text-xs transition-opacity ${
-            visibleDepartments.CG ? 'opacity-100' : 'opacity-40'
+          onClick={() => onToggleSeries('CG')}
+          className={`flex items-center gap-1 text-[10px] transition-opacity hover:opacity-80 ${
+            visibleSeries.CG ? 'opacity-100' : 'opacity-30'
           }`}
         >
           <div 
-            className="w-2.5 h-2.5 rounded-full" 
+            className="w-2 h-2 rounded-full" 
             style={{ backgroundColor: DEPARTMENT_COLORS.cg }}
           />
           <span>CG</span>
         </button>
         <button
-          onClick={() => onToggleDepartment('COMP')}
-          className={`flex items-center gap-1.5 text-xs transition-opacity ${
-            visibleDepartments.COMP ? 'opacity-100' : 'opacity-40'
+          onClick={() => onToggleSeries('COMP')}
+          className={`flex items-center gap-1 text-[10px] transition-opacity hover:opacity-80 ${
+            visibleSeries.COMP ? 'opacity-100' : 'opacity-30'
           }`}
         >
           <div 
-            className="w-2.5 h-2.5 rounded-full" 
+            className="w-2 h-2 rounded-full" 
             style={{ backgroundColor: DEPARTMENT_COLORS.compositing }}
           />
           <span>COMP</span>
         </button>
         <button
-          onClick={() => onToggleDepartment('FX')}
-          className={`flex items-center gap-1.5 text-xs transition-opacity ${
-            visibleDepartments.FX ? 'opacity-100' : 'opacity-40'
+          onClick={() => onToggleSeries('FX')}
+          className={`flex items-center gap-1 text-[10px] transition-opacity hover:opacity-80 ${
+            visibleSeries.FX ? 'opacity-100' : 'opacity-30'
           }`}
         >
           <div 
-            className="w-2.5 h-2.5 rounded-full" 
+            className="w-2 h-2 rounded-full" 
             style={{ backgroundColor: DEPARTMENT_COLORS.fx }}
           />
           <span>FX</span>
         </button>
-        {showTotalNeeded && (
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <div className="w-4 h-0" style={{ borderTop: '2px dashed #9CA3AF' }} />
-            <span>Total Needed</span>
-          </span>
-        )}
-        {showTotalBooked && (
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <div className="w-4 h-0" style={{ borderTop: '2px dashed #60A5FA' }} />
-            <span>Total Booked</span>
-          </span>
-        )}
+        <button
+          onClick={() => onToggleSeries('TOTAL_NEEDED')}
+          className={`flex items-center gap-1 text-[10px] transition-opacity hover:opacity-80 ${
+            visibleSeries.TOTAL_NEEDED ? 'opacity-100' : 'opacity-30'
+          }`}
+        >
+          <div className="w-3 h-0" style={{ borderTop: '1.5px dashed #9CA3AF' }} />
+          <span>Σ Need</span>
+        </button>
+        <button
+          onClick={() => onToggleSeries('TOTAL_BOOKED')}
+          className={`flex items-center gap-1 text-[10px] transition-opacity hover:opacity-80 ${
+            visibleSeries.TOTAL_BOOKED ? 'opacity-100' : 'opacity-30'
+          }`}
+        >
+          <div className="w-3 h-0" style={{ borderTop: '1.5px dashed #60A5FA' }} />
+          <span>Σ Booked</span>
+        </button>
       </div>
     </div>
   );
