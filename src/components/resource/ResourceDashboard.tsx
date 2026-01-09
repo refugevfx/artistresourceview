@@ -18,12 +18,14 @@ export function ResourceDashboard() {
     dataPoints,
     peaks,
     isLoading,
+    isRefreshingBookings,
     error,
     filters,
     settings,
     setFilters,
     setSettings,
-    refresh,
+    refreshBookingsOnly,
+    refreshAll,
   } = useNotionResourceData();
 
   const handleShowBookedToggle = () => {
@@ -71,11 +73,22 @@ export function ResourceDashboard() {
           
           <Button 
             variant="outline" 
-            onClick={refresh}
-            disabled={isLoading}
+            size="sm"
+            onClick={refreshBookingsOnly}
+            disabled={isLoading || isRefreshingBookings}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshingBookings ? 'animate-spin' : ''}`} />
+            Update Bookings
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={refreshAll}
+            disabled={isLoading || isRefreshingBookings}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Update
+            Refresh All
           </Button>
         </div>
       </div>

@@ -26,12 +26,14 @@ interface UseNotionResourceDataReturn {
   dataPoints: ResourceDataPoint[];
   peaks: { animation: number; cg: number; compositing: number; fx: number };
   isLoading: boolean;
+  isRefreshingBookings: boolean;
   error: string | null;
   filters: ResourceFilters;
   settings: ResourceSettings;
   setFilters: (filters: Partial<ResourceFilters>) => void;
   setSettings: (settings: Partial<ResourceSettings>) => void;
-  refresh: () => Promise<void>;
+  refreshBookingsOnly: () => Promise<void>;
+  refreshAll: () => Promise<void>;
 }
 
 const DEFAULT_FILTERS: ResourceFilters = {
@@ -54,6 +56,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
   const [dataPoints, setDataPoints] = useState<ResourceDataPoint[]>([]);
   const [peaks, setPeaks] = useState({ animation: 0, cg: 0, compositing: 0, fx: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshingBookings, setIsRefreshingBookings] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const [filters, setFiltersState] = useState<ResourceFilters>(DEFAULT_FILTERS);
@@ -235,11 +238,43 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
     return { points, peaks: peakValues };
   }, []);
 
-  const refresh = useCallback(async () => {
+  // Quick refresh - only bookings data
+  const refreshBookingsOnly = useCallback(async () => {
+    setIsRefreshingBookings(true);
+    setError(null);
+
+    try {
+      console.log('Refreshing bookings only...');
+      const bookingsData = await fetchBookings();
+      setBookings(bookingsData);
+
+      // Recalculate with existing episodes + new bookings
+      const { points, peaks: peakValues } = calculateData(
+        episodes, 
+        bookingsData, 
+        settings.curves, 
+        filters,
+        settings.zoom
+      );
+      
+      setDataPoints(points);
+      setPeaks(peakValues);
+      console.log('Bookings refresh complete');
+    } catch (err) {
+      console.error('Error fetching bookings:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch bookings');
+    } finally {
+      setIsRefreshingBookings(false);
+    }
+  }, [fetchBookings, calculateData, settings, filters, episodes]);
+
+  // Full refresh - all data
+  const refreshAll = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
+      console.log('Refreshing all data...');
       // Fetch projects first, then budgets (which needs project data)
       const [projectsData, bookingsData] = await Promise.all([
         fetchProjects(),
@@ -263,6 +298,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
       
       setDataPoints(points);
       setPeaks(peakValues);
+      console.log('Full refresh complete');
     } catch (err) {
       console.error('Error fetching Notion data:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
@@ -288,7 +324,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
 
   // Initial fetch
   useEffect(() => {
-    refresh();
+    refreshAll();
   }, []);
 
   return {
@@ -298,11 +334,13 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
     dataPoints,
     peaks,
     isLoading,
+    isRefreshingBookings,
     error,
     filters,
     settings,
     setFilters,
     setSettings,
-    refresh,
+    refreshBookingsOnly,
+    refreshAll,
   };
 }
