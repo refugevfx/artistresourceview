@@ -92,8 +92,34 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
     });
   }, [filteredBookings]);
 
-  // Calculate timeline bounds using the same function as the chart
+  // Calculate timeline bounds - detect if all bookings are in the past
   const { timelineStart, timelineEnd, months } = useMemo(() => {
+    const now = new Date();
+    
+    // Check if we have bookings and if they're all in the past
+    if (filteredBookings.length > 0) {
+      const endDates = filteredBookings.map(b => parseISO(b.endDate));
+      const startDates = filteredBookings.map(b => parseISO(b.startDate));
+      const maxEndDate = new Date(Math.max(...endDates.map(d => d.getTime())));
+      const minStartDate = new Date(Math.min(...startDates.map(d => d.getTime())));
+      
+      // All bookings are in the past - shift timeline to show them
+      if (maxEndDate < now) {
+        const start = startOfMonth(addMonths(minStartDate, -1));
+        const end = endOfMonth(addMonths(maxEndDate, 1));
+        
+        const monthList: Date[] = [];
+        let current = startOfMonth(start);
+        while (current <= end) {
+          monthList.push(current);
+          current = addMonths(current, 1);
+        }
+        
+        return { timelineStart: start, timelineEnd: end, months: monthList };
+      }
+    }
+    
+    // Default behavior: use standard timeline bounds
     const { start, end } = getTimelineBounds(zoom);
 
     // Generate month markers
@@ -105,7 +131,7 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
     }
 
     return { timelineStart: start, timelineEnd: end, months: monthList };
-  }, [zoom]);
+  }, [zoom, filteredBookings]);
 
   const totalDays = differenceInDays(timelineEnd, timelineStart) + 1;
   const ROW_HEIGHT = 28;
