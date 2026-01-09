@@ -45,10 +45,13 @@ export function FilterControls({
   onFiltersChange,
   onZoomChange,
 }: FilterControlsProps) {
-  // Filter out child projects (those with a parentId)
+  // Filter out child projects (those with a parentId) and filter by selected statuses
   const topLevelProjects = projects.filter(p => !p.parentId);
+  const filteredProjects = topLevelProjects.filter(p => 
+    filters.statuses.includes(p.status as ProjectStatus)
+  );
   
-  const selectedProject = topLevelProjects.find(p => p.id === filters.projectId);
+  const selectedProject = filteredProjects.find(p => p.id === filters.projectId);
   const selectedEpisode = episodes.find(e => e.id === filters.episodeId);
   
   // Get episodes for selected project
@@ -58,7 +61,45 @@ export function FilterControls({
 
   return (
     <div className="flex flex-wrap items-center gap-1">
-      {/* Project Selector */}
+      {/* Status Filter - First, determines which projects show */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="h-6 text-[10px] px-2">
+            <Filter className="h-3 w-3 mr-1" />
+            Status
+            {filters.statuses.length < STATUS_OPTIONS.length && (
+              <Badge variant="secondary" className="ml-1 text-[9px] h-4 px-1">
+                {filters.statuses.length}
+              </Badge>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuLabel className="text-xs">Project Status</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {STATUS_OPTIONS.map(status => (
+            <DropdownMenuCheckboxItem
+              key={status}
+              checked={filters.statuses.includes(status)}
+              onSelect={(e) => e.preventDefault()}
+              onCheckedChange={(checked) => {
+                const newStatuses = checked
+                  ? [...filters.statuses, status]
+                  : filters.statuses.filter(s => s !== status);
+                // Ensure at least one status is selected
+                if (newStatuses.length > 0) {
+                  onFiltersChange({ statuses: newStatuses });
+                }
+              }}
+              className="text-xs"
+            >
+              {status}
+            </DropdownMenuCheckboxItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Project Selector - Filtered by status */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 min-w-[100px] justify-between">
@@ -76,7 +117,7 @@ export function FilterControls({
             <span className="font-medium">All Projects</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          {topLevelProjects.map(project => (
+          {filteredProjects.map(project => (
             <DropdownMenuItem
               key={project.id}
               onClick={() => onFiltersChange({ projectId: project.id, episodeId: null })}
@@ -122,40 +163,6 @@ export function FilterControls({
           </DropdownMenuContent>
         </DropdownMenu>
       )}
-
-      {/* Status Filter */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-6 text-[10px] px-2">
-            <Filter className="h-3 w-3 mr-1" />
-            Status
-            {filters.statuses.length < STATUS_OPTIONS.length && (
-              <Badge variant="secondary" className="ml-1 text-[9px] h-4 px-1">
-                {filters.statuses.length}
-              </Badge>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuLabel className="text-xs">Project Status</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {STATUS_OPTIONS.map(status => (
-            <DropdownMenuCheckboxItem
-              key={status}
-              checked={filters.statuses.includes(status)}
-              onCheckedChange={(checked) => {
-                const newStatuses = checked
-                  ? [...filters.statuses, status]
-                  : filters.statuses.filter(s => s !== status);
-                onFiltersChange({ statuses: newStatuses });
-              }}
-              className="text-xs"
-            >
-              {status}
-            </DropdownMenuCheckboxItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
 
       {/* Region Filter */}
       <DropdownMenu>
