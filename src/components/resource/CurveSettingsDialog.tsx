@@ -43,10 +43,22 @@ const DEPARTMENT_COLORS: Record<Department, string> = {
 const PRESET_NAMES = {
   flat: 'Flat',
   frontLoaded: 'Front Loaded',
-  backLoaded: 'Back Loaded',
   bellCurve: 'Bell Curve',
+  pinchedBell: 'Pinched Bell',
+  backLoaded: 'Back Loaded',
   rampUp: 'Ramp Up',
 };
+
+// Helper to detect which preset matches a curve (if any)
+function detectPreset(curve: DistributionCurve): string {
+  for (const [key, presetCurve] of Object.entries(CURVE_PRESETS)) {
+    const matches = curve.every(
+      (val, i) => Math.abs(val - presetCurve[i]) < 0.001
+    );
+    if (matches) return key;
+  }
+  return 'custom';
+}
 
 function CurveEditor({ 
   department, 
@@ -57,7 +69,7 @@ function CurveEditor({
   curve: DistributionCurve; 
   onChange: (curve: DistributionCurve) => void;
 }) {
-  const [selectedPreset, setSelectedPreset] = useState<string>('custom');
+  const [selectedPreset, setSelectedPreset] = useState<string>(() => detectPreset(curve));
 
   const handlePresetChange = (preset: string) => {
     setSelectedPreset(preset);

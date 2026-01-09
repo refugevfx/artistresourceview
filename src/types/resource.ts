@@ -32,6 +32,7 @@ export const CURVE_PRESETS = {
   flat: [0.2, 0.2, 0.2, 0.2, 0.2] as DistributionCurve,
   frontLoaded: [0.10, 0.30, 0.30, 0.20, 0.10] as DistributionCurve,
   bellCurve: [0.01, 0.31, 0.36, 0.31, 0.01] as DistributionCurve,
+  pinchedBell: [0.01, 0.20, 0.58, 0.20, 0.01] as DistributionCurve,
   backLoaded: [0.10, 0.20, 0.30, 0.30, 0.10] as DistributionCurve,
   rampUp: [0.05, 0.15, 0.25, 0.25, 0.3] as DistributionCurve,
 };
