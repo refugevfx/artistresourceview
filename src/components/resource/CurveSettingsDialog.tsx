@@ -16,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { 
   DepartmentCurveSettings, 
@@ -25,6 +24,7 @@ import {
   DEFAULT_CURVE_SETTINGS,
   Department
 } from '@/types/resource';
+import { DraggableCurveEditor } from './DraggableCurveEditor';
 
 interface CurveSettingsDialogProps {
   curves: DepartmentCurveSettings;
@@ -32,6 +32,13 @@ interface CurveSettingsDialogProps {
 }
 
 const DEPARTMENTS: Department[] = ['Animation', 'CG', 'Compositing', 'FX'];
+
+const DEPARTMENT_COLORS: Record<Department, string> = {
+  Animation: '#4FC3F7',
+  CG: '#FF9800',
+  Compositing: '#66BB6A',
+  FX: '#EF5350',
+};
 
 const PRESET_NAMES = {
   flat: 'Flat',
@@ -59,26 +66,13 @@ function CurveEditor({
     }
   };
 
-  const handlePointChange = (index: number, value: number) => {
-    const newCurve = [...curve] as DistributionCurve;
-    newCurve[index] = value / 100;
-    
-    // Normalize to ensure sum = 1
-    const sum = newCurve.reduce((a, b) => a + b, 0);
-    if (sum > 0) {
-      const normalized = newCurve.map(v => v / sum) as DistributionCurve;
-      onChange(normalized);
-    }
-    
+  const handleCurveChange = (newCurve: DistributionCurve) => {
+    onChange(newCurve);
     setSelectedPreset('custom');
   };
 
-  // Visual representation of the curve
-  const maxVal = Math.max(...curve);
-  const barHeight = 60;
-
   return (
-    <div className="space-y-4 p-4 border rounded-lg bg-card">
+    <div className="space-y-3 p-4 border rounded-lg bg-card">
       <div className="flex items-center justify-between">
         <Label className="text-base font-medium">{department}</Label>
         <Select value={selectedPreset} onValueChange={handlePresetChange}>
@@ -94,49 +88,17 @@ function CurveEditor({
         </Select>
       </div>
 
-      {/* Visual curve representation */}
-      <div className="flex items-end justify-between gap-1 h-16 px-2">
-        {curve.map((value, index) => (
-          <div 
-            key={index}
-            className="flex-1 bg-primary/60 rounded-t transition-all"
-            style={{ height: `${(value / maxVal) * barHeight}px` }}
-          />
-        ))}
-      </div>
-
-      {/* Timeline labels */}
-      <div className="flex justify-between text-xs text-muted-foreground px-2">
-        <span>Start</span>
-        <span>25%</span>
-        <span>50%</span>
-        <span>75%</span>
-        <span>End</span>
-      </div>
-
-      {/* Sliders for each point */}
-      <div className="space-y-3">
-        {['Start', '25%', '50%', '75%', 'End'].map((label, index) => (
-          <div key={index} className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground w-10">{label}</span>
-            <Slider
-              value={[curve[index] * 100]}
-              onValueChange={([value]) => handlePointChange(index, value)}
-              min={1}
-              max={100}
-              step={1}
-              className="flex-1"
-            />
-            <span className="text-xs text-muted-foreground w-12 text-right">
-              {(curve[index] * 100).toFixed(0)}%
-            </span>
-          </div>
-        ))}
+      {/* Interactive curve editor */}
+      <div className="flex justify-center">
+        <DraggableCurveEditor
+          curve={curve}
+          onChange={handleCurveChange}
+          color={DEPARTMENT_COLORS[department]}
+        />
       </div>
     </div>
   );
 }
-
 export function CurveSettingsDialog({ curves, onCurvesChange }: CurveSettingsDialogProps) {
   const [localCurves, setLocalCurves] = useState(curves);
   const [open, setOpen] = useState(false);
