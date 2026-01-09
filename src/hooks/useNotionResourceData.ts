@@ -95,7 +95,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
     return data.projects as NotionProject[];
   }, [filters.statuses]);
 
-  const fetchBudgets = useCallback(async () => {
+  const fetchBudgets = useCallback(async (projectsData: NotionProject[]) => {
     console.log('Fetching budgets from Notion...');
     const { data, error } = await supabase.functions.invoke('notion-proxy', {
       body: { action: 'getBudgets' },
@@ -109,19 +109,38 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
       name: string;
       status: string;
       projectId: string | null;
-      episodeCode: string;
+      episodeId: string | null;
+      episodeIds: string[];
       animationDays: number;
       cgDays: number;
       compositingDays: number;
       fxDays: number;
-      startDate: string | null;
-      endDate: string | null;
     }>;
+
+    // Build a map of episode ID to parent project ID using projects data
+    // Projects with parentId are episodes - their parentId points to the parent project
+    const episodeToProjectMap = new Map<string, string>();
+    const episodeToDataMap = new Map<string, NotionProject>();
+    
+    projectsData.forEach(project => {
+      if (project.parentId) {
+        // This is an episode - its parentId is the parent project
+        episodeToProjectMap.set(project.id, project.parentId);
+        episodeToDataMap.set(project.id, project);
+      }
+    });
+
+    console.log('Episode to project mapping:', episodeToProjectMap.size, 'episodes');
 
     const episodeMap = new Map<string, NotionEpisode>();
     
     budgets.forEach(budget => {
-      const key = budget.episodeCode || budget.id;
+      // Use episodeId to find the episode and its parent project
+      const episodeId = budget.episodeId || budget.episodeIds?.[0];
+      const parentProjectId = episodeId ? episodeToProjectMap.get(episodeId) : budget.projectId;
+      const episodeData = episodeId ? episodeToDataMap.get(episodeId) : null;
+      
+      const key = episodeId || budget.id;
       const existing = episodeMap.get(key);
       
       if (existing) {
@@ -132,12 +151,12 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
         existing.fxDays += budget.fxDays;
       } else {
         episodeMap.set(key, {
-          id: budget.id,
-          name: budget.name,
-          code: budget.episodeCode,
-          projectId: budget.projectId || '',
-          startDate: budget.startDate,
-          endDate: budget.endDate,
+          id: episodeId || budget.id,
+          name: episodeData?.name || budget.name,
+          code: episodeData?.name || budget.name,
+          projectId: parentProjectId || '',
+          startDate: episodeData?.startDate || null,
+          endDate: episodeData?.endDate || null,
           animationDays: budget.animationDays,
           cgDays: budget.cgDays,
           compositingDays: budget.compositingDays,
@@ -146,6 +165,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
       }
     });
 
+    console.log('Episodes with budgets:', episodeMap.size);
     return Array.from(episodeMap.values());
   }, []);
 
@@ -210,11 +230,14 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
     setError(null);
 
     try {
-      const [projectsData, episodesData, bookingsData] = await Promise.all([
+      // Fetch projects first, then budgets (which needs project data)
+      const [projectsData, bookingsData] = await Promise.all([
         fetchProjects(),
-        fetchBudgets(),
         fetchBookings(),
       ]);
+      
+      // Fetch budgets with project data for mapping
+      const episodesData = await fetchBudgets(projectsData);
 
       setProjects(projectsData);
       setEpisodes(episodesData);
