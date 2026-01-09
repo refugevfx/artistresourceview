@@ -229,112 +229,100 @@ export function ResourceChart({
             )}
             <Tooltip content={<CustomTooltip />} />
             
-            {visibleSeries.ANM && (
-              <Area
-                type="monotone"
-                dataKey="ANM"
-                name="ANM"
-                stroke={DEPARTMENT_COLORS.animation}
-                strokeWidth={hoveredLine === 'ANM' ? 2 : 1.5}
-                fill="url(#gradientANM)"
-                dot={false}
-                activeDot={{ r: 4, fill: DEPARTMENT_COLORS.animation }}
-                onMouseEnter={() => setHoveredLine('ANM')}
-                onMouseLeave={() => setHoveredLine(null)}
-                isAnimationActive={true}
-                animationDuration={800}
-                animationEasing="ease-out"
-              >
-                <LabelList dataKey="ANM" content={renderCustomLabel} />
-              </Area>
-            )}
-            {visibleSeries.CG && (
-              <Area
-                type="monotone"
-                dataKey="CG"
-                name="CG"
-                stroke={DEPARTMENT_COLORS.cg}
-                strokeWidth={hoveredLine === 'CG' ? 2 : 1.5}
-                fill="url(#gradientCG)"
-                dot={false}
-                activeDot={{ r: 4, fill: DEPARTMENT_COLORS.cg }}
-                onMouseEnter={() => setHoveredLine('CG')}
-                onMouseLeave={() => setHoveredLine(null)}
-                isAnimationActive={true}
-                animationDuration={800}
-                animationEasing="ease-out"
-              >
-                <LabelList dataKey="CG" content={renderCustomLabel} />
-              </Area>
-            )}
-            {visibleSeries.COMP && (
-              <Area
-                type="monotone"
-                dataKey="COMP"
-                name="COMP"
-                stroke={DEPARTMENT_COLORS.compositing}
-                strokeWidth={hoveredLine === 'COMP' ? 2 : 1.5}
-                fill="url(#gradientCOMP)"
-                dot={false}
-                activeDot={{ r: 4, fill: DEPARTMENT_COLORS.compositing }}
-                onMouseEnter={() => setHoveredLine('COMP')}
-                onMouseLeave={() => setHoveredLine(null)}
-                isAnimationActive={true}
-                animationDuration={800}
-                animationEasing="ease-out"
-              >
-                <LabelList dataKey="COMP" content={renderCustomLabel} />
-              </Area>
-            )}
-            {visibleSeries.FX && (
-              <Area
-                type="monotone"
-                dataKey="FX"
-                name="FX"
-                stroke={DEPARTMENT_COLORS.fx}
-                strokeWidth={hoveredLine === 'FX' ? 2 : 1.5}
-                fill="url(#gradientFX)"
-                dot={false}
-                activeDot={{ r: 4, fill: DEPARTMENT_COLORS.fx }}
-                onMouseEnter={() => setHoveredLine('FX')}
-                onMouseLeave={() => setHoveredLine(null)}
-                isAnimationActive={true}
-                animationDuration={800}
-                animationEasing="ease-out"
-              >
-                <LabelList dataKey="FX" content={renderCustomLabel} />
-              </Area>
-            )}
-            {visibleSeries.TOTAL_NEEDED && (
-              <Line
-                type="monotone"
-                dataKey="TOTAL_NEEDED"
-                name="Σ Need"
-                stroke="#9CA3AF"
-                strokeWidth={1.5}
-                strokeDasharray="4 4"
-                dot={false}
-                activeDot={{ r: 4, fill: '#9CA3AF' }}
-                isAnimationActive={true}
-                animationDuration={800}
-                animationEasing="ease-out"
-              />
-            )}
-            {visibleSeries.TOTAL_BOOKED && (
-              <Line
-                type="monotone"
-                dataKey="TOTAL_BOOKED"
-                name="Σ Booked"
-                stroke="#60A5FA"
-                strokeWidth={1.5}
-                strokeDasharray="8 4"
-                dot={false}
-                activeDot={{ r: 4, fill: '#60A5FA' }}
-                isAnimationActive={true}
-                animationDuration={800}
-                animationEasing="ease-out"
-              />
-            )}
+            <Area
+              type="monotone"
+              dataKey="ANM"
+              name="ANM"
+              stroke={visibleSeries.ANM ? DEPARTMENT_COLORS.animation : 'transparent'}
+              strokeWidth={hoveredLine === 'ANM' ? 2 : 1.5}
+              fill={visibleSeries.ANM ? 'url(#gradientANM)' : 'transparent'}
+              dot={false}
+              activeDot={visibleSeries.ANM ? { r: 4, fill: DEPARTMENT_COLORS.animation } : false}
+              onMouseEnter={() => setHoveredLine('ANM')}
+              onMouseLeave={() => setHoveredLine(null)}
+              isAnimationActive={true}
+              animationDuration={800}
+              animationEasing="ease-out"
+            >
+              {visibleSeries.ANM && <LabelList dataKey="ANM" content={renderCustomLabel} />}
+            </Area>
+            <Area
+              type="monotone"
+              dataKey="CG"
+              name="CG"
+              stroke={visibleSeries.CG ? DEPARTMENT_COLORS.cg : 'transparent'}
+              strokeWidth={hoveredLine === 'CG' ? 2 : 1.5}
+              fill={visibleSeries.CG ? 'url(#gradientCG)' : 'transparent'}
+              dot={false}
+              activeDot={visibleSeries.CG ? { r: 4, fill: DEPARTMENT_COLORS.cg } : false}
+              onMouseEnter={() => setHoveredLine('CG')}
+              onMouseLeave={() => setHoveredLine(null)}
+              isAnimationActive={true}
+              animationDuration={800}
+              animationEasing="ease-out"
+            >
+              {visibleSeries.CG && <LabelList dataKey="CG" content={renderCustomLabel} />}
+            </Area>
+            <Area
+              type="monotone"
+              dataKey="COMP"
+              name="COMP"
+              stroke={visibleSeries.COMP ? DEPARTMENT_COLORS.compositing : 'transparent'}
+              strokeWidth={hoveredLine === 'COMP' ? 2 : 1.5}
+              fill={visibleSeries.COMP ? 'url(#gradientCOMP)' : 'transparent'}
+              dot={false}
+              activeDot={visibleSeries.COMP ? { r: 4, fill: DEPARTMENT_COLORS.compositing } : false}
+              onMouseEnter={() => setHoveredLine('COMP')}
+              onMouseLeave={() => setHoveredLine(null)}
+              isAnimationActive={true}
+              animationDuration={800}
+              animationEasing="ease-out"
+            >
+              {visibleSeries.COMP && <LabelList dataKey="COMP" content={renderCustomLabel} />}
+            </Area>
+            <Area
+              type="monotone"
+              dataKey="FX"
+              name="FX"
+              stroke={visibleSeries.FX ? DEPARTMENT_COLORS.fx : 'transparent'}
+              strokeWidth={hoveredLine === 'FX' ? 2 : 1.5}
+              fill={visibleSeries.FX ? 'url(#gradientFX)' : 'transparent'}
+              dot={false}
+              activeDot={visibleSeries.FX ? { r: 4, fill: DEPARTMENT_COLORS.fx } : false}
+              onMouseEnter={() => setHoveredLine('FX')}
+              onMouseLeave={() => setHoveredLine(null)}
+              isAnimationActive={true}
+              animationDuration={800}
+              animationEasing="ease-out"
+            >
+              {visibleSeries.FX && <LabelList dataKey="FX" content={renderCustomLabel} />}
+            </Area>
+            <Line
+              type="monotone"
+              dataKey="TOTAL_NEEDED"
+              name="Σ Need"
+              stroke={visibleSeries.TOTAL_NEEDED ? '#9CA3AF' : 'transparent'}
+              strokeWidth={1.5}
+              strokeDasharray="4 4"
+              dot={false}
+              activeDot={visibleSeries.TOTAL_NEEDED ? { r: 4, fill: '#9CA3AF' } : false}
+              isAnimationActive={true}
+              animationDuration={800}
+              animationEasing="ease-out"
+            />
+            <Line
+              type="monotone"
+              dataKey="TOTAL_BOOKED"
+              name="Σ Booked"
+              stroke={visibleSeries.TOTAL_BOOKED ? '#60A5FA' : 'transparent'}
+              strokeWidth={1.5}
+              strokeDasharray="8 4"
+              dot={false}
+              activeDot={visibleSeries.TOTAL_BOOKED ? { r: 4, fill: '#60A5FA' } : false}
+              isAnimationActive={true}
+              animationDuration={800}
+              animationEasing="ease-out"
+            />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
