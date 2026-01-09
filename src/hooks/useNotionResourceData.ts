@@ -30,6 +30,7 @@ interface UseNotionResourceDataReturn {
   error: string | null;
   filters: ResourceFilters;
   settings: ResourceSettings;
+  animationKey: number;
   setFilters: (filters: Partial<ResourceFilters>) => void;
   setSettings: (settings: Partial<ResourceSettings>) => void;
   refreshBookingsOnly: () => Promise<void>;
@@ -58,6 +59,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshingBookings, setIsRefreshingBookings] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [animationKey, setAnimationKey] = useState(0);
   
   const [filters, setFiltersState] = useState<ResourceFilters>(DEFAULT_FILTERS);
   const [settings, setSettingsState] = useState<ResourceSettings>(() => {
@@ -259,6 +261,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
       
       setDataPoints(points);
       setPeaks(peakValues);
+      setAnimationKey(prev => prev + 1); // Trigger animation
       console.log('Bookings refresh complete');
     } catch (err) {
       console.error('Error fetching bookings:', err);
@@ -298,6 +301,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
       
       setDataPoints(points);
       setPeaks(peakValues);
+      setAnimationKey(prev => prev + 1); // Trigger animation
       console.log('Full refresh complete');
     } catch (err) {
       console.error('Error fetching Notion data:', err);
@@ -338,6 +342,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
     error,
     filters,
     settings,
+    animationKey,
     setFilters,
     setSettings,
     refreshBookingsOnly,

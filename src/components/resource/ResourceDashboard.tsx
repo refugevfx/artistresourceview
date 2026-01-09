@@ -22,6 +22,7 @@ export function ResourceDashboard() {
     error,
     filters,
     settings,
+    animationKey,
     setFilters,
     setSettings,
     refreshBookingsOnly,
@@ -175,6 +176,7 @@ export function ResourceDashboard() {
                   dataPoints={dataPoints}
                   showBooked={filters.showBooked}
                   peaks={peaks}
+                  animationKey={animationKey}
                 />
               )}
             </TabsContent>
