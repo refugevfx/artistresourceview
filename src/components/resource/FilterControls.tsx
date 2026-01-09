@@ -64,14 +64,8 @@ export function FilterControls({
       {/* Status Filter - First, determines which projects show */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-6 text-[10px] px-2">
-            <Filter className="h-3 w-3 mr-1" />
-            Status
-            {filters.statuses.length < STATUS_OPTIONS.length && (
-              <Badge variant="secondary" className="ml-1 text-[9px] h-4 px-1">
-                {filters.statuses.length}
-              </Badge>
-            )}
+          <Button variant="outline" size="sm" className="h-6 text-[10px] px-1.5">
+            <Filter className="h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
@@ -106,6 +100,9 @@ export function FilterControls({
             <span className="truncate">
               {selectedProject?.name || 'All Projects'}
             </span>
+            <Badge variant="secondary" className="ml-1 text-[9px] h-4 px-1">
+              {filteredProjects.length}
+            </Badge>
             <ChevronDown className="h-3 w-3 ml-1 shrink-0 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
