@@ -125,7 +125,8 @@ export function calculateBookedArtists(
         const dateKey = format(day, 'yyyy-MM-dd');
         const existing = dailyBooked.get(dateKey) || { animation: 0, cg: 0, compositing: 0, fx: 0 };
         
-        const allocation = booking.allocationPercent || 1;
+        // allocationPercent is a 0-1 multiplier (0 = no time on project, 1 = full time)
+        const allocation = Math.max(0, Math.min(1, booking.allocationPercent ?? 1));
         
         switch (booking.department) {
           case 'Animation':
