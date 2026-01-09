@@ -19,7 +19,9 @@ interface ResourceChartProps {
   dataPoints: ResourceDataPoint[];
   showBooked: boolean;
   peaks: { animation: number; cg: number; compositing: number; fx: number };
-  animationKey?: number; // Key to trigger re-animation
+  animationKey?: number;
+  showTotalNeeded?: boolean;
+  showTotalBooked?: boolean;
 }
 
 // Department colors matching the design reference
@@ -30,7 +32,14 @@ const DEPARTMENT_COLORS = {
   fx: '#EF5350', // Coral red
 };
 
-export function ResourceChart({ dataPoints, showBooked, peaks, animationKey = 0 }: ResourceChartProps) {
+export function ResourceChart({ 
+  dataPoints, 
+  showBooked, 
+  peaks, 
+  animationKey = 0,
+  showTotalNeeded = false,
+  showTotalBooked = false
+}: ResourceChartProps) {
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
 
   // Transform data for chart - if showBooked, show remaining need (needed - booked)
@@ -38,6 +47,7 @@ export function ResourceChart({ dataPoints, showBooked, peaks, animationKey = 0 
   const chartData = dataPoints.map(point => {
     const date = format(parseISO(point.date), 'MMM yyyy');
     const totalBooked = point.animationBooked + point.cgBooked + point.compositingBooked + point.fxBooked;
+    const totalNeeded = point.animationNeeded + point.cgNeeded + point.compositingNeeded + point.fxNeeded;
     
     if (showBooked) {
       return {
@@ -47,7 +57,8 @@ export function ResourceChart({ dataPoints, showBooked, peaks, animationKey = 0 
         CG: point.cgNeeded - point.cgBooked,
         COMP: point.compositingNeeded - point.compositingBooked,
         FX: point.fxNeeded - point.fxBooked,
-        TOTAL: totalBooked,
+        TOTAL_BOOKED: totalBooked,
+        TOTAL_NEEDED: totalNeeded,
       };
     }
     
@@ -58,16 +69,22 @@ export function ResourceChart({ dataPoints, showBooked, peaks, animationKey = 0 
       CG: point.cgNeeded,
       COMP: point.compositingNeeded,
       FX: point.fxNeeded,
-      TOTAL: totalBooked,
+      TOTAL_BOOKED: totalBooked,
+      TOTAL_NEEDED: totalNeeded,
     };
   });
 
-  // Calculate Y axis bounds - allow negative values for overbooking
-  const allValues = chartData.flatMap(d => [d.ANM, d.CG, d.COMP, d.FX, d.TOTAL]);
+  // Calculate Y axis bounds - include totals only if they're visible
+  const deptValues = chartData.flatMap(d => [d.ANM, d.CG, d.COMP, d.FX]);
+  const totalValues = [
+    ...(showTotalNeeded ? chartData.map(d => d.TOTAL_NEEDED) : []),
+    ...(showTotalBooked ? chartData.map(d => d.TOTAL_BOOKED) : []),
+  ];
+  const allValues = [...deptValues, ...totalValues];
   const maxValue = Math.max(...allValues, 1);
   const minValue = Math.min(...allValues, 0);
-  const yAxisMax = Math.ceil(maxValue * 1.1); // Add 10% padding
-  const yAxisMin = minValue < 0 ? Math.floor(minValue * 1.1) : 0; // Allow negative with padding
+  const yAxisMax = Math.ceil(maxValue * 1.1);
+  const yAxisMin = minValue < 0 ? Math.floor(minValue * 1.1) : 0;
   const hasNegativeValues = minValue < 0;
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -246,19 +263,36 @@ export function ResourceChart({ dataPoints, showBooked, peaks, animationKey = 0 
           >
             <LabelList dataKey="FX" content={renderCustomLabel} />
           </Area>
-          <Line
-            type="monotone"
-            dataKey="TOTAL"
-            name="Total Booked"
-            stroke="hsl(var(--muted-foreground))"
-            strokeWidth={2}
-            strokeDasharray="4 4"
-            dot={false}
-            activeDot={{ r: 5, fill: 'hsl(var(--muted-foreground))' }}
-            isAnimationActive={true}
-            animationDuration={800}
-            animationEasing="ease-out"
-          />
+          {showTotalNeeded && (
+            <Line
+              type="monotone"
+              dataKey="TOTAL_NEEDED"
+              name="Total Needed"
+              stroke="#9CA3AF"
+              strokeWidth={2}
+              strokeDasharray="4 4"
+              dot={false}
+              activeDot={{ r: 5, fill: '#9CA3AF' }}
+              isAnimationActive={true}
+              animationDuration={800}
+              animationEasing="ease-out"
+            />
+          )}
+          {showTotalBooked && (
+            <Line
+              type="monotone"
+              dataKey="TOTAL_BOOKED"
+              name="Total Booked"
+              stroke="#60A5FA"
+              strokeWidth={2}
+              strokeDasharray="8 4"
+              dot={false}
+              activeDot={{ r: 5, fill: '#60A5FA' }}
+              isAnimationActive={true}
+              animationDuration={800}
+              animationEasing="ease-out"
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
     </div>
