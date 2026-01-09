@@ -83,30 +83,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string) => {
     try {
-      // First verify the email exists in ShotGrid and is active
-      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('shotgrid-proxy', {
-        body: { action: 'verifyUserEmail', filters: { email } }
-      });
-
-      if (verifyError) {
-        return { error: new Error('Failed to verify ShotGrid access'), shotgridError: verifyError.message };
+      // Verify email is from refugevfx.com domain
+      const emailDomain = email.split('@')[1]?.toLowerCase();
+      if (emailDomain !== 'refugevfx.com') {
+        return { error: null, shotgridError: 'Only @refugevfx.com email addresses are allowed to sign up.' };
       }
 
-      if (!verifyData.verified) {
-        return { error: null, shotgridError: verifyData.message };
-      }
-
-      // User is verified in ShotGrid, proceed with signup
       const redirectUrl = `${window.location.origin}/`;
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: redirectUrl,
-          data: {
-            shotgrid_user_id: verifyData.user.id,
-            shotgrid_name: verifyData.user.name
-          }
         }
       });
 
