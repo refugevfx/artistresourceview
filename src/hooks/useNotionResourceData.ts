@@ -88,17 +88,15 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
   }, []);
 
   const fetchProjects = useCallback(async () => {
-    console.log('Fetching projects from Notion...');
+    console.log('Fetching all projects from Notion...');
+    // Fetch ALL projects (no status filter) - filtering happens client-side
     const { data, error } = await supabase.functions.invoke('notion-proxy', {
-      body: { 
-        action: 'getProjects',
-        filter: { statuses: filters.statuses }
-      },
+      body: { action: 'getProjects' },
     });
 
     if (error) throw new Error(error.message);
     return data.projects as NotionProject[];
-  }, [filters.statuses]);
+  }, []);
 
   const fetchBudgets = useCallback(async (projectsData: NotionProject[]) => {
     console.log('Fetching budgets from Notion...');
