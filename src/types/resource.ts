@@ -30,9 +30,9 @@ export const DEFAULT_CURVE_SETTINGS: DepartmentCurveSettings = {
 // Preset curves
 export const CURVE_PRESETS = {
   flat: [0.2, 0.2, 0.2, 0.2, 0.2] as DistributionCurve,
-  frontLoaded: [0.35, 0.25, 0.2, 0.12, 0.08] as DistributionCurve,
-  backLoaded: [0.08, 0.12, 0.2, 0.25, 0.35] as DistributionCurve,
-  bellCurve: [0.1, 0.25, 0.3, 0.25, 0.1] as DistributionCurve,
+  frontLoaded: [0.10, 0.30, 0.30, 0.20, 0.10] as DistributionCurve,
+  bellCurve: [0.01, 0.31, 0.36, 0.31, 0.01] as DistributionCurve,
+  backLoaded: [0.10, 0.20, 0.30, 0.30, 0.10] as DistributionCurve,
   rampUp: [0.05, 0.15, 0.25, 0.25, 0.3] as DistributionCurve,
 };
 
