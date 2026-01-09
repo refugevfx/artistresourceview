@@ -180,27 +180,52 @@ serve(async (req) => {
         // Get all bids without filter first, then filter in code
         const pages = await queryDatabase(bidsDbId, undefined, notionToken);
         
-        console.log('Bids properties sample:', pages[0]?.properties ? Object.keys(pages[0].properties) : 'no pages');
+        // Debug: log Parent property structure
+        if (pages[0]) {
+          const parentProp = pages[0].properties['Parent'];
+          const episodesProp = pages[0].properties['Episodes'];
+          console.log('Parent property:', JSON.stringify(parentProp));
+          console.log('Episodes property:', JSON.stringify(episodesProp));
+        }
         
         const budgets = pages.map((page) => {
           const props = page.properties;
           
-          // Try multiple possible status property names
-          const statusProp = props['Bid Status'] || props['Status'] || props['Bid ...'];
+          // Get status from Bid Status property (status type)
+          const statusProp = props['Bid Status'];
           const status = statusProp?.status?.name || statusProp?.select?.name || null;
+          
+          // Get values from rollup/formula fields - these may be rollups or numbers
+          const getNumericValue = (prop: any): number => {
+            if (!prop) return 0;
+            if (prop.number !== undefined && prop.number !== null) return prop.number;
+            if (prop.rollup?.number !== undefined) return prop.rollup.number;
+            if (prop.formula?.number !== undefined) return prop.formula.number;
+            return 0;
+          };
+          
+          // Get episode IDs from Episodes relation
+          const episodeIds = getRelationIds(props['Episodes']);
+          
+          // Get parent project from Parent relation (if it exists)
+          // Otherwise we'll link through episode later
+          const parentId = getRelationIds(props['Parent'])?.[0] || null;
           
           return {
             id: page.id,
             name: getTitle(props['Bid Name']),
             status: status,
-            projectId: getRelationIds(props['Parent'])?.[0] || null,
-            episodeCode: getRichText(props['Episodes']) || getTitle(props['Episodes']),
-            animationDays: getNumber(props['ANM Award']),
-            cgDays: getNumber(props['CG Award']),
-            compositingDays: getNumber(props['COMP Award']),
-            fxDays: getNumber(props['FX Award']),
+            projectId: parentId,
+            episodeId: episodeIds[0] || null, // First episode ID
+            episodeIds: episodeIds, // All episode IDs
+            animationDays: getNumericValue(props['ANM Award']),
+            cgDays: getNumericValue(props['CG Award']),
+            compositingDays: getNumericValue(props['COMP Award']),
+            fxDays: getNumericValue(props['FX Award']),
           };
         }).filter(b => b.status === 'Awarded' || b.status === 'Estimate');
+
+        console.log('Budgets sample:', budgets.slice(0, 2));
 
         return new Response(JSON.stringify({ budgets }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
