@@ -26,6 +26,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Track previous session to avoid redundant updates that cause re-renders
   const prevSessionRef = useRef<string | null>(null);
 
+  // Track if initial auth check is complete to prevent flickering
+  const initializedRef = useRef(false);
+
   useEffect(() => {
     let mounted = true;
 
@@ -39,14 +42,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const sessionId = newSession?.access_token ?? null;
 
       // Skip redundant updates - only update if session actually changed
-      if (sessionId === prevSessionRef.current) {
+      if (sessionId === prevSessionRef.current && initializedRef.current) {
         return;
       }
       prevSessionRef.current = sessionId;
 
-      setSession(newSession);
-      setUser(newSession?.user ?? null);
-      setLoading(false);
+      // Use a microtask to batch state updates and prevent input focus loss
+      queueMicrotask(() => {
+        if (!mounted) return;
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        setLoading(false);
+        initializedRef.current = true;
+      });
 
       // Detect password recovery event (some flows come through as SIGNED_IN with type=recovery in the URL hash)
       const hash = window.location.hash ?? '';
@@ -62,11 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const sessionId = existingSession?.access_token ?? null;
 
-      // Only update if this is a new session
-      if (sessionId !== prevSessionRef.current) {
+      // Only update if this is a new session or not yet initialized
+      if (sessionId !== prevSessionRef.current || !initializedRef.current) {
         prevSessionRef.current = sessionId;
         setSession(existingSession);
         setUser(existingSession?.user ?? null);
+        initializedRef.current = true;
       }
       setLoading(false);
     });
