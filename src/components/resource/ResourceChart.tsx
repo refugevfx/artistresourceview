@@ -8,7 +8,8 @@ import {
   Tooltip, 
   ResponsiveContainer,
   Legend,
-  LabelList
+  LabelList,
+  ReferenceLine
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { ResourceDataPoint } from '@/types/resource';
@@ -31,6 +32,7 @@ export function ResourceChart({ dataPoints, showBooked, peaks }: ResourceChartPr
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
 
   // Transform data for chart - if showBooked, show remaining need (needed - booked)
+  // Allow negative values to show overbooking
   const chartData = dataPoints.map(point => {
     const date = format(parseISO(point.date), 'MMM yyyy');
     
@@ -38,10 +40,10 @@ export function ResourceChart({ dataPoints, showBooked, peaks }: ResourceChartPr
       return {
         date,
         rawDate: point.date,
-        ANM: Math.max(0, point.animationNeeded - point.animationBooked),
-        CG: Math.max(0, point.cgNeeded - point.cgBooked),
-        COMP: Math.max(0, point.compositingNeeded - point.compositingBooked),
-        FX: Math.max(0, point.fxNeeded - point.fxBooked),
+        ANM: point.animationNeeded - point.animationBooked,
+        CG: point.cgNeeded - point.cgBooked,
+        COMP: point.compositingNeeded - point.compositingBooked,
+        FX: point.fxNeeded - point.fxBooked,
       };
     }
     
@@ -55,12 +57,13 @@ export function ResourceChart({ dataPoints, showBooked, peaks }: ResourceChartPr
     };
   });
 
-  // Calculate max Y value for consistent axis
-  const maxValue = Math.max(
-    ...chartData.flatMap(d => [d.ANM, d.CG, d.COMP, d.FX]),
-    1
-  );
+  // Calculate Y axis bounds - allow negative values for overbooking
+  const allValues = chartData.flatMap(d => [d.ANM, d.CG, d.COMP, d.FX]);
+  const maxValue = Math.max(...allValues, 1);
+  const minValue = Math.min(...allValues, 0);
   const yAxisMax = Math.ceil(maxValue * 1.1); // Add 10% padding
+  const yAxisMin = minValue < 0 ? Math.floor(minValue * 1.1) : 0; // Allow negative with padding
+  const hasNegativeValues = minValue < 0;
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
@@ -143,11 +146,25 @@ export function ResourceChart({ dataPoints, showBooked, peaks }: ResourceChartPr
             tickLine={{ stroke: 'hsl(var(--border))' }}
           />
           <YAxis 
-            domain={[0, yAxisMax]}
+            domain={[yAxisMin, yAxisMax]}
             tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
             axisLine={{ stroke: 'hsl(var(--border))' }}
             tickLine={{ stroke: 'hsl(var(--border))' }}
           />
+          {hasNegativeValues && (
+            <ReferenceLine 
+              y={0} 
+              stroke="hsl(var(--destructive))" 
+              strokeWidth={1.5}
+              strokeDasharray="4 4"
+              label={{ 
+                value: 'Overbooked', 
+                position: 'insideBottomRight',
+                fill: 'hsl(var(--destructive))',
+                fontSize: 10
+              }}
+            />
+          )}
           <Tooltip content={<CustomTooltip />} />
           <Legend 
             wrapperStyle={{ paddingTop: 20 }}
