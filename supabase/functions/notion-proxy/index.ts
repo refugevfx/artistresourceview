@@ -223,7 +223,12 @@ serve(async (req) => {
             compositingDays: getNumericValue(props['COMP Award']),
             fxDays: getNumericValue(props['FX Award']),
           };
-        }).filter(b => b.status === 'Awarded' || b.status === 'Estimate' || b.status === 'Bid Sent');
+        }).filter(b => {
+          const activeStatuses = ['Awarded', 'Estimate', 'Bid Sent'];
+          const historicalStatuses = [...activeStatuses, 'Completed'];
+          const allowedStatuses = includeHistorical ? historicalStatuses : activeStatuses;
+          return allowedStatuses.includes(b.status);
+        });
 
         console.log('Budgets sample:', budgets.slice(0, 2));
 
