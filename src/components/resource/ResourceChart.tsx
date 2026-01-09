@@ -28,6 +28,7 @@ interface ResourceChartProps {
     TOTAL_BOOKED: boolean;
   };
   onToggleSeries: (series: keyof ResourceChartProps['visibleSeries']) => void;
+  autoRescale?: boolean;
 }
 
 // Department colors matching the design reference
@@ -44,7 +45,8 @@ export function ResourceChart({
   peaks, 
   animationKey = 0,
   visibleSeries,
-  onToggleSeries
+  onToggleSeries,
+  autoRescale = true
 }: ResourceChartProps) {
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
 
@@ -78,15 +80,19 @@ export function ResourceChart({
     };
   });
 
-  // Calculate Y axis bounds - only include visible series
-  const allValues = chartData.flatMap(d => [
-    ...(visibleSeries.ANM ? [d.ANM] : []),
-    ...(visibleSeries.CG ? [d.CG] : []),
-    ...(visibleSeries.COMP ? [d.COMP] : []),
-    ...(visibleSeries.FX ? [d.FX] : []),
-    ...(visibleSeries.TOTAL_NEEDED ? [d.TOTAL_NEEDED] : []),
-    ...(visibleSeries.TOTAL_BOOKED ? [d.TOTAL_BOOKED] : []),
-  ]);
+  // Calculate Y axis bounds
+  // If autoRescale is off, include all series; if on, only visible series
+  const allValues = autoRescale
+    ? chartData.flatMap(d => [
+        ...(visibleSeries.ANM ? [d.ANM] : []),
+        ...(visibleSeries.CG ? [d.CG] : []),
+        ...(visibleSeries.COMP ? [d.COMP] : []),
+        ...(visibleSeries.FX ? [d.FX] : []),
+        ...(visibleSeries.TOTAL_NEEDED ? [d.TOTAL_NEEDED] : []),
+        ...(visibleSeries.TOTAL_BOOKED ? [d.TOTAL_BOOKED] : []),
+      ])
+    : chartData.flatMap(d => [d.ANM, d.CG, d.COMP, d.FX, d.TOTAL_NEEDED, d.TOTAL_BOOKED]);
+  
   const maxValue = Math.max(...allValues, 1);
   const minValue = Math.min(...allValues, 0);
   const yAxisMax = Math.ceil(maxValue * 1.1);
