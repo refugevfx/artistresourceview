@@ -23,12 +23,14 @@ export function ResourceDashboard() {
     peaks,
     isLoading,
     isRefreshingBookings,
+    isRefreshingBids,
     error,
     filters,
     settings,
     animationKey,
     setFilters,
     setSettings,
+    refreshBidsOnly,
     refreshBookingsOnly,
     refreshAll,
   } = useNotionResourceData();
@@ -63,7 +65,7 @@ export function ResourceDashboard() {
           </p>
         </div>
         
-        <div className="flex items-center gap-1.5 mr-8">
+        <div className="flex items-center gap-1.5 mr-[150px]">
           {/* Show Booked Toggle */}
           <div className="flex items-center gap-1.5 mr-2">
             <Switch
@@ -96,6 +98,16 @@ export function ResourceDashboard() {
             variant="outline" 
             size="sm"
             className="h-6 text-[10px] px-2"
+            onClick={refreshBidsOnly}
+            disabled={isLoading || isRefreshingBids}
+          >
+            Update Bids
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="h-6 text-[10px] px-2"
             onClick={refreshBookingsOnly}
             disabled={isLoading || isRefreshingBookings}
           >
@@ -107,7 +119,7 @@ export function ResourceDashboard() {
             size="icon"
             className="h-6 w-6"
             onClick={refreshAll}
-            disabled={isLoading || isRefreshingBookings}
+            disabled={isLoading || isRefreshingBookings || isRefreshingBids}
             title="Refresh All"
           >
             <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
