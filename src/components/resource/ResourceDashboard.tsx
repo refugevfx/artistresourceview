@@ -212,12 +212,13 @@ export function ResourceDashboard() {
             </TabsContent>
 
             <TabsContent value="bookings" className="mt-0 h-[310px]">
-              {isLoading ? (
+              {isLoading || isRefreshingBookings ? (
                 <div className="h-full flex items-center justify-center">
                   <Skeleton className="h-[280px] w-full" />
                 </div>
               ) : (
                 <BookingsGanttChart
+                  key={animationKey}
                   bookings={bookings}
                   filters={filters}
                   zoom={settings.zoom}
