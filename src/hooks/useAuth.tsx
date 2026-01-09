@@ -23,8 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   
-  // Track previous session to avoid redundant updates that cause re-renders
-  const prevSessionRef = useRef<string | null>(null);
+  // Track previous auth identity to avoid redundant updates that cause re-renders (e.g. TOKEN_REFRESHED)
+  const prevAuthKeyRef = useRef<string | null>(null);
 
   // Track if initial auth check is complete to prevent flickering
   const initializedRef = useRef(false);
@@ -38,14 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!mounted) return;
 
-      // Create a stable session identifier to compare
-      const sessionId = newSession?.access_token ?? null;
+      // Only treat auth as "changed" when the user identity changes (not when tokens refresh)
+      const authKey = newSession?.user?.id ?? null;
 
-      // Skip redundant updates - only update if session actually changed
-      if (sessionId === prevSessionRef.current && initializedRef.current) {
+      if (authKey === prevAuthKeyRef.current && initializedRef.current) {
         return;
       }
-      prevSessionRef.current = sessionId;
+
+      prevAuthKeyRef.current = authKey;
 
       // Use a microtask to batch state updates and prevent input focus loss
       queueMicrotask(() => {
@@ -68,11 +68,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
       if (!mounted) return;
 
-      const sessionId = existingSession?.access_token ?? null;
+      const authKey = existingSession?.user?.id ?? null;
 
-      // Only update if this is a new session or not yet initialized
-      if (sessionId !== prevSessionRef.current || !initializedRef.current) {
-        prevSessionRef.current = sessionId;
+      // Only update if this is a new auth identity or not yet initialized
+      if (authKey !== prevAuthKeyRef.current || !initializedRef.current) {
+        prevAuthKeyRef.current = authKey;
         setSession(existingSession);
         setUser(existingSession?.user ?? null);
         initializedRef.current = true;
