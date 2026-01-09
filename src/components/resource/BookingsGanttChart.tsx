@@ -26,8 +26,8 @@ interface BookingsGanttChartProps {
 }
 
 interface BookingRow {
-  crewMemberId: string;
-  crewMemberName: string;
+  id: string;
+  name: string;
   department: Department;
   bookings: NotionBooking[];
 }
@@ -63,18 +63,20 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
     return filtered;
   }, [bookings, filters, visibleDepartments]);
 
-  // Group bookings by crew member
+  // Group bookings by name (crew member name from booking)
   const rows = useMemo(() => {
     const groupMap = new Map<string, BookingRow>();
     
     filteredBookings.forEach(booking => {
-      const existing = groupMap.get(booking.crewMemberId);
+      // Use the booking name as the grouping key
+      const key = booking.name || booking.id;
+      const existing = groupMap.get(key);
       if (existing) {
         existing.bookings.push(booking);
       } else {
-        groupMap.set(booking.crewMemberId, {
-          crewMemberId: booking.crewMemberId,
-          crewMemberName: booking.crewMemberName,
+        groupMap.set(key, {
+          id: key,
+          name: booking.name || booking.crewMemberName || 'Unknown',
           department: booking.department,
           bookings: [booking],
         });
@@ -86,9 +88,7 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
       const deptOrder = ['Animation', 'CG', 'Compositing', 'FX'];
       const deptDiff = deptOrder.indexOf(a.department) - deptOrder.indexOf(b.department);
       if (deptDiff !== 0) return deptDiff;
-      const nameA = a.crewMemberName || '';
-      const nameB = b.crewMemberName || '';
-      return nameA.localeCompare(nameB);
+      return a.name.localeCompare(b.name);
     });
   }, [filteredBookings]);
 
@@ -147,10 +147,10 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
           ) : (
             <ScrollArea className="h-full">
               <div className="min-w-full">
-                {rows.map((row) => (
-                  <div 
-                    key={row.crewMemberId} 
-                    className="border-b border-border/50 hover:bg-muted/30 relative"
+              {rows.map((row) => (
+                <div 
+                  key={row.id} 
+                  className="border-b border-border/50 hover:bg-muted/30 relative"
                     style={{ height: ROW_HEIGHT }}
                   >
                     {/* Month grid lines */}
@@ -189,14 +189,14 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
                                 opacity,
                               }}
                             >
-                              <span className="px-1 text-[9px] text-white truncate block leading-5 font-medium">
-                                {row.crewMemberName || 'Unknown'}
-                              </span>
-                            </div>
+                            <span className="px-1 text-[9px] text-white truncate block leading-5 font-medium">
+                              {row.name}
+                            </span>
+                          </div>
                           </TooltipTrigger>
-                          <TooltipContent side="top" className="text-xs">
-                            <div className="space-y-0.5">
-                              <div className="font-medium">{row.crewMemberName || 'Unknown'}</div>
+                        <TooltipContent side="top" className="text-xs">
+                          <div className="space-y-0.5">
+                            <div className="font-medium">{row.name}</div>
                               <div className="text-muted-foreground">
                                 {format(parseISO(booking.startDate), 'MMM d')} - {format(parseISO(booking.endDate), 'MMM d, yyyy')}
                               </div>
