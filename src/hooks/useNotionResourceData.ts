@@ -98,10 +98,11 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
     return data.projects as NotionProject[];
   }, []);
 
-  const fetchBudgets = useCallback(async (projectsData: NotionProject[]) => {
+  const fetchBudgets = useCallback(async (projectsData: NotionProject[], statuses: ProjectStatus[]) => {
     console.log('Fetching budgets from Notion...');
+    const includeHistorical = statuses.includes('Completed');
     const { data, error } = await supabase.functions.invoke('notion-proxy', {
-      body: { action: 'getBudgets' },
+      body: { action: 'getBudgets', includeHistorical },
     });
 
     if (error) throw new Error(error.message);
@@ -284,7 +285,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
       ]);
       
       // Fetch budgets with project data for mapping
-      const episodesData = await fetchBudgets(projectsData);
+      const episodesData = await fetchBudgets(projectsData, filters.statuses);
 
       setProjects(projectsData);
       setEpisodes(episodesData);

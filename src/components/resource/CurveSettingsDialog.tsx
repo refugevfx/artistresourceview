@@ -135,6 +135,14 @@ export function CurveSettingsDialog({ curves, onCurvesChange }: CurveSettingsDia
           </DialogDescription>
         </DialogHeader>
 
+        <div className="p-3 rounded-lg bg-muted/50 border text-sm text-muted-foreground space-y-2">
+          <p className="font-medium text-foreground">How budget filtering works:</p>
+          <ul className="list-disc list-inside space-y-1 text-xs">
+            <li><strong>Active projects:</strong> Shows budgets with status "Awarded", "Estimate", or "Bid Sent"</li>
+            <li><strong>Completed projects:</strong> Also includes budgets with status "Completed" for historical viewing</li>
+          </ul>
+        </div>
+
         <div className="space-y-4 py-4">
           {DEPARTMENTS.map(dept => (
             <CurveEditor
