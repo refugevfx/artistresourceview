@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { 
-  LineChart, 
-  Line, 
+  AreaChart, 
+  Area, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
   Legend,
-  ReferenceLine
+  LabelList
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { ResourceDataPoint } from '@/types/resource';
@@ -84,27 +84,21 @@ export function ResourceChart({ dataPoints, showBooked, peaks }: ResourceChartPr
     );
   };
 
-  const renderPeakLabel = (dept: string, value: number, color: string) => {
-    if (value < 0.1) return null;
+  // Custom label renderer for data points
+  const renderCustomLabel = (props: any) => {
+    const { x, y, value } = props;
+    if (value === 0 || value === undefined) return null;
     
-    // Find the data point with the peak value
-    const peakPoint = chartData.find(d => {
-      const deptValue = d[dept as keyof typeof d] as number;
-      return Math.abs(deptValue - value) < 0.01;
-    });
-    
-    if (!peakPoint) return null;
-
     return (
-      <div 
-        className="absolute text-xs font-bold px-1.5 py-0.5 rounded"
-        style={{ 
-          color: color,
-          backgroundColor: `${color}20`,
-        }}
+      <text 
+        x={x} 
+        y={y - 8} 
+        fill="hsl(var(--muted-foreground))"
+        fontSize={10}
+        textAnchor="middle"
       >
-        {value.toFixed(1)}
-      </div>
+        {value.toFixed(2)}
+      </text>
     );
   };
 
@@ -119,29 +113,40 @@ export function ResourceChart({ dataPoints, showBooked, peaks }: ResourceChartPr
   return (
     <div className="w-full h-[400px]">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart
+        <AreaChart
           data={chartData}
-          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+          margin={{ top: 30, right: 30, left: 20, bottom: 20 }}
         >
-          <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+          <defs>
+            <linearGradient id="gradientANM" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={DEPARTMENT_COLORS.animation} stopOpacity={0.4} />
+              <stop offset="100%" stopColor={DEPARTMENT_COLORS.animation} stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="gradientCG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={DEPARTMENT_COLORS.cg} stopOpacity={0.4} />
+              <stop offset="100%" stopColor={DEPARTMENT_COLORS.cg} stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="gradientCOMP" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={DEPARTMENT_COLORS.compositing} stopOpacity={0.4} />
+              <stop offset="100%" stopColor={DEPARTMENT_COLORS.compositing} stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="gradientFX" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={DEPARTMENT_COLORS.fx} stopOpacity={0.4} />
+              <stop offset="100%" stopColor={DEPARTMENT_COLORS.fx} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" vertical={true} />
           <XAxis 
             dataKey="date" 
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
             axisLine={{ stroke: 'hsl(var(--border))' }}
             tickLine={{ stroke: 'hsl(var(--border))' }}
           />
           <YAxis 
             domain={[0, yAxisMax]}
-            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
             axisLine={{ stroke: 'hsl(var(--border))' }}
             tickLine={{ stroke: 'hsl(var(--border))' }}
-            label={{ 
-              value: 'Artists', 
-              angle: -90, 
-              position: 'insideLeft',
-              fill: 'hsl(var(--muted-foreground))',
-              fontSize: 12
-            }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend 
@@ -150,53 +155,64 @@ export function ResourceChart({ dataPoints, showBooked, peaks }: ResourceChartPr
               <span className="text-foreground text-sm">{value}</span>
             )}
           />
-          <ReferenceLine y={0} stroke="hsl(var(--border))" />
           
-          <Line
+          <Area
             type="monotone"
             dataKey="ANM"
             name="ANM"
             stroke={DEPARTMENT_COLORS.animation}
             strokeWidth={hoveredLine === 'ANM' ? 3 : 2}
+            fill="url(#gradientANM)"
             dot={false}
             activeDot={{ r: 6, fill: DEPARTMENT_COLORS.animation }}
             onMouseEnter={() => setHoveredLine('ANM')}
             onMouseLeave={() => setHoveredLine(null)}
-          />
-          <Line
+          >
+            <LabelList dataKey="ANM" content={renderCustomLabel} />
+          </Area>
+          <Area
             type="monotone"
             dataKey="CG"
             name="CG"
             stroke={DEPARTMENT_COLORS.cg}
             strokeWidth={hoveredLine === 'CG' ? 3 : 2}
+            fill="url(#gradientCG)"
             dot={false}
             activeDot={{ r: 6, fill: DEPARTMENT_COLORS.cg }}
             onMouseEnter={() => setHoveredLine('CG')}
             onMouseLeave={() => setHoveredLine(null)}
-          />
-          <Line
+          >
+            <LabelList dataKey="CG" content={renderCustomLabel} />
+          </Area>
+          <Area
             type="monotone"
             dataKey="COMP"
             name="COMP"
             stroke={DEPARTMENT_COLORS.compositing}
             strokeWidth={hoveredLine === 'COMP' ? 3 : 2}
+            fill="url(#gradientCOMP)"
             dot={false}
             activeDot={{ r: 6, fill: DEPARTMENT_COLORS.compositing }}
             onMouseEnter={() => setHoveredLine('COMP')}
             onMouseLeave={() => setHoveredLine(null)}
-          />
-          <Line
+          >
+            <LabelList dataKey="COMP" content={renderCustomLabel} />
+          </Area>
+          <Area
             type="monotone"
             dataKey="FX"
             name="FX"
             stroke={DEPARTMENT_COLORS.fx}
             strokeWidth={hoveredLine === 'FX' ? 3 : 2}
+            fill="url(#gradientFX)"
             dot={false}
             activeDot={{ r: 6, fill: DEPARTMENT_COLORS.fx }}
             onMouseEnter={() => setHoveredLine('FX')}
             onMouseLeave={() => setHoveredLine(null)}
-          />
-        </LineChart>
+          >
+            <LabelList dataKey="FX" content={renderCustomLabel} />
+          </Area>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );
