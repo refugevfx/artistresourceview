@@ -172,7 +172,7 @@ export function ResourceChart({
   }
 
   return (
-    <div className="w-full" key={animationKey}>
+    <div className="w-full">
       <div className="h-[280px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
