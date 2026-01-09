@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { 
-  AreaChart, 
+  ComposedChart, 
   Area, 
+  Line,
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -9,8 +10,7 @@ import {
   ResponsiveContainer,
   Legend,
   LabelList,
-  ReferenceLine,
-  Line
+  ReferenceLine
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { ResourceDataPoint } from '@/types/resource';
@@ -121,7 +121,7 @@ export function ResourceChart({ dataPoints, showBooked, peaks, animationKey = 0 
   return (
     <div className="w-full h-[400px]" key={animationKey}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart
+        <ComposedChart
           data={chartData}
           margin={{ top: 30, right: 30, left: 20, bottom: 20 }}
         >
@@ -259,7 +259,7 @@ export function ResourceChart({ dataPoints, showBooked, peaks, animationKey = 0 
             animationDuration={800}
             animationEasing="ease-out"
           />
-        </AreaChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
