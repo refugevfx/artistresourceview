@@ -300,6 +300,14 @@ serve(async (req) => {
           };
         }).filter(b => b.startDate && b.endDate);
 
+        // Debug: log booking sample with allocation
+        console.log('Bookings sample:', bookings.slice(0, 3).map(b => ({
+          name: b.name,
+          department: b.department,
+          allocation: b.allocationPercent,
+          dates: `${b.startDate} to ${b.endDate}`
+        })));
+
         return new Response(JSON.stringify({ bookings }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
