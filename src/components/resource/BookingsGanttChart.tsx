@@ -143,33 +143,6 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex flex-col h-[280px]">
-        {/* Timeline header */}
-        <div className="flex border-b border-border">
-          <div className="shrink-0" style={{ width: NAME_WIDTH }}>
-            <div className="h-6 px-2 flex items-center text-[10px] font-medium text-muted-foreground">
-              Crew Member
-            </div>
-          </div>
-          <div className="flex-1 flex relative">
-            {months.map((month, idx) => {
-              const monthStart = startOfMonth(month);
-              const monthEnd = endOfMonth(month);
-              const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
-              const width = (daysInMonth / totalDays) * 100;
-              
-              return (
-                <div
-                  key={idx}
-                  className="h-6 border-l border-border first:border-l-0 flex items-center justify-center text-[9px] text-muted-foreground"
-                  style={{ width: `${width}%` }}
-                >
-                  {format(month, 'MMM yy')}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
         {/* Rows */}
         <ScrollArea className="flex-1">
           <div className="min-w-full">
@@ -188,8 +161,8 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
                     className="w-2 h-2 rounded-full shrink-0"
                     style={{ backgroundColor: DEPARTMENT_COLORS[row.department] }}
                   />
-                  <span className="text-[10px] truncate" title={row.crewMemberName}>
-                    {row.crewMemberName}
+                  <span className="text-[10px] truncate" title={row.crewMemberName || 'Unknown'}>
+                    {row.crewMemberName || 'Unknown'}
                   </span>
                 </div>
 
@@ -232,13 +205,13 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
                             }}
                           >
                             <span className="px-1 text-[9px] text-white truncate block leading-5 font-medium">
-                              {booking.projectName}
+                              {row.crewMemberName || 'Unknown'}
                             </span>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="text-xs">
                           <div className="space-y-0.5">
-                            <div className="font-medium">{booking.crewMemberName}</div>
+                            <div className="font-medium">{row.crewMemberName || 'Unknown'}</div>
                             <div>{booking.projectName}</div>
                             <div className="text-muted-foreground">
                               {format(parseISO(booking.startDate), 'MMM d')} - {format(parseISO(booking.endDate), 'MMM d, yyyy')}
@@ -258,6 +231,33 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
             ))}
           </div>
         </ScrollArea>
+
+        {/* Timeline footer - dates at bottom like chart view */}
+        <div className="flex border-t border-border">
+          <div className="shrink-0" style={{ width: NAME_WIDTH }}>
+            <div className="h-6 px-2 flex items-center text-[10px] font-medium text-muted-foreground">
+              Crew Member
+            </div>
+          </div>
+          <div className="flex-1 flex relative">
+            {months.map((month, idx) => {
+              const monthStart = startOfMonth(month);
+              const monthEnd = endOfMonth(month);
+              const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
+              const width = (daysInMonth / totalDays) * 100;
+              
+              return (
+                <div
+                  key={idx}
+                  className="h-6 border-l border-border first:border-l-0 flex items-center justify-center text-[9px] text-muted-foreground"
+                  style={{ width: `${width}%` }}
+                >
+                  {format(month, 'MMM yy')}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </TooltipProvider>
   );
