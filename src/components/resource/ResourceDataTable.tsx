@@ -190,15 +190,15 @@ export function ResourceDataTable({
   };
 
   return (
-    <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-      <Table>
+    <ScrollArea className="w-full h-[280px] whitespace-nowrap rounded-md border">
+      <Table className="text-[9px]">
         <TableHeader>
-          <TableRow>
-            <TableHead className="sticky left-0 z-10 bg-background min-w-[180px]">
+          <TableRow className="h-6">
+            <TableHead className="sticky left-0 z-10 bg-background min-w-[120px] py-1 text-[9px]">
               Project / Dept
             </TableHead>
             {months.map(m => (
-              <TableHead key={m.key} className="text-center min-w-[70px]">
+              <TableHead key={m.key} className="text-center min-w-[45px] py-1 text-[9px]">
                 {m.label}
               </TableHead>
             ))}
@@ -206,23 +206,23 @@ export function ResourceDataTable({
         </TableHeader>
         <TableBody>
           {/* Totals Section */}
-          <TableRow className="bg-muted/50 font-semibold">
-            <TableCell className="sticky left-0 z-10 bg-muted/50">TOTALS</TableCell>
+          <TableRow className="bg-muted/50 font-semibold h-5">
+            <TableCell className="sticky left-0 z-10 bg-muted/50 py-0.5">TOTALS</TableCell>
             {months.map(m => (
-              <TableCell key={m.key} className="text-center text-muted-foreground">
+              <TableCell key={m.key} className="text-center text-muted-foreground py-0.5">
                 —
               </TableCell>
             ))}
           </TableRow>
           {DEPARTMENTS.map(dept => (
-            <TableRow key={`total-${dept.key}`} className="bg-muted/30">
-              <TableCell className={`sticky left-0 z-10 bg-muted/30 pl-6 ${dept.color}`}>
+            <TableRow key={`total-${dept.key}`} className="bg-muted/30 h-5">
+              <TableCell className={`sticky left-0 z-10 bg-muted/30 pl-4 py-0.5 ${dept.color}`}>
                 {dept.label}
               </TableCell>
               {months.map(m => {
                 const val = totals.get(m.key)?.[dept.key] || 0;
                 return (
-                  <TableCell key={m.key} className={`text-center font-medium ${dept.color}`}>
+                  <TableCell key={m.key} className={`text-center font-medium py-0.5 ${dept.color}`}>
                     {formatValue(val)}
                   </TableCell>
                 );
@@ -233,25 +233,25 @@ export function ResourceDataTable({
           {/* Project Rows */}
           {projectData.map(pd => (
             <>
-              <TableRow key={pd.projectId} className="border-t-2">
-                <TableCell className="sticky left-0 z-10 bg-background font-medium">
+              <TableRow key={pd.projectId} className="border-t h-5">
+                <TableCell className="sticky left-0 z-10 bg-background font-medium py-0.5 truncate max-w-[120px]">
                   {pd.projectName}
                 </TableCell>
                 {months.map(m => (
-                  <TableCell key={m.key} className="text-center text-muted-foreground">
+                  <TableCell key={m.key} className="text-center text-muted-foreground py-0.5">
                     —
                   </TableCell>
                 ))}
               </TableRow>
               {DEPARTMENTS.map(dept => (
-                <TableRow key={`${pd.projectId}-${dept.key}`}>
-                  <TableCell className={`sticky left-0 z-10 bg-background pl-6 text-sm ${dept.color}`}>
+                <TableRow key={`${pd.projectId}-${dept.key}`} className="h-5">
+                  <TableCell className={`sticky left-0 z-10 bg-background pl-4 py-0.5 ${dept.color}`}>
                     {dept.label}
                   </TableCell>
                   {months.map(m => {
                     const val = pd.months.get(m.key)?.[dept.key] || 0;
                     return (
-                      <TableCell key={m.key} className="text-center text-sm">
+                      <TableCell key={m.key} className="text-center py-0.5">
                         {formatValue(val)}
                       </TableCell>
                     );
@@ -263,7 +263,7 @@ export function ResourceDataTable({
           
           {projectData.length === 0 && (
             <TableRow>
-              <TableCell colSpan={months.length + 1} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={months.length + 1} className="text-center text-muted-foreground py-4">
                 No projects match the current filters
               </TableCell>
             </TableRow>
@@ -271,6 +271,7 @@ export function ResourceDataTable({
         </TableBody>
       </Table>
       <ScrollBar orientation="horizontal" />
+      <ScrollBar orientation="vertical" />
     </ScrollArea>
   );
 }
