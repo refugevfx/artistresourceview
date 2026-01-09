@@ -277,14 +277,12 @@ serve(async (req) => {
             region = props['Region'].select.name;
           }
 
-          // Get allocation percentage (stored as 0-100 in Notion, convert to 0-1)
+          // Get allocation percentage (Notion stores as decimal 0-1, e.g., 0.5 = 50%)
           let allocation = 1;
           if (props['Allocation %']?.number !== undefined && props['Allocation %'].number !== null) {
-            allocation = props['Allocation %'].number / 100;
+            allocation = props['Allocation %'].number;
           } else if (props['Allocation']?.number !== undefined && props['Allocation'].number !== null) {
-            // Check if already in decimal form (<=1) or percentage form (>1)
-            const rawValue = props['Allocation'].number;
-            allocation = rawValue > 1 ? rawValue / 100 : rawValue;
+            allocation = props['Allocation'].number;
           }
 
           return {
