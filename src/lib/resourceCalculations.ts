@@ -14,6 +14,7 @@ import {
   format, 
   differenceInDays,
   isWithinInterval,
+  isWeekend,
   startOfMonth,
   endOfMonth,
   eachMonthOfInterval,
@@ -55,15 +56,17 @@ export function calculateEpisodeNeeds(
   try {
     const start = parseISO(episode.startDate);
     const end = parseISO(episode.endDate);
-    const totalDays = differenceInDays(end, start) + 1;
     
-    if (totalDays <= 0) return dailyNeeds;
+    // Get only working days (exclude weekends)
+    const allDays = eachDayOfInterval({ start, end });
+    const workingDays = allDays.filter(day => !isWeekend(day));
+    const totalWorkingDays = workingDays.length;
     
-    const days = eachDayOfInterval({ start, end });
+    if (totalWorkingDays <= 0) return dailyNeeds;
     
-    // For each day, calculate the weighted need based on curve position
-    days.forEach((day, index) => {
-      const position = index / (totalDays - 1 || 1); // 0-1 position in timeline
+    // For each working day, calculate the weighted need based on curve position
+    workingDays.forEach((day, index) => {
+      const position = index / (totalWorkingDays - 1 || 1); // 0-1 position in timeline
       const dateKey = format(day, 'yyyy-MM-dd');
       
       // Get curve weights for each department
@@ -72,16 +75,15 @@ export function calculateEpisodeNeeds(
       const compWeight = interpolateCurve(curveSettings.Compositing, position);
       const fxWeight = interpolateCurve(curveSettings.FX, position);
       
-      // Calculate total weight across all days for normalization
-      // Since curves sum to ~1 and we're distributing, we scale by totalDays
-      // Man-days / totalDays gives average daily need, then multiply by curve weight * 5 (since curve sums to 1)
-      const avgAnimDaily = episode.animationDays / totalDays;
-      const avgCgDaily = episode.cgDays / totalDays;
-      const avgCompDaily = episode.compositingDays / totalDays;
-      const avgFxDaily = episode.fxDays / totalDays;
+      // Man-days / totalWorkingDays gives average daily need per working day
+      // Multiply by curve weight * 5 (since curve sums to 1, but represents 5 segments)
+      const avgAnimDaily = episode.animationDays / totalWorkingDays;
+      const avgCgDaily = episode.cgDays / totalWorkingDays;
+      const avgCompDaily = episode.compositingDays / totalWorkingDays;
+      const avgFxDaily = episode.fxDays / totalWorkingDays;
       
       dailyNeeds.set(dateKey, {
-        animation: avgAnimDaily * animWeight * 5, // *5 because curve points sum to 1, but represent 5 segments
+        animation: avgAnimDaily * animWeight * 5,
         cg: avgCgDaily * cgWeight * 5,
         compositing: avgCompDaily * compWeight * 5,
         fx: avgFxDaily * fxWeight * 5,
@@ -116,9 +118,10 @@ export function calculateBookedArtists(
     try {
       const start = parseISO(booking.startDate);
       const end = parseISO(booking.endDate);
-      const days = eachDayOfInterval({ start, end });
+      const allDays = eachDayOfInterval({ start, end });
+      const workingDays = allDays.filter(day => !isWeekend(day));
       
-      days.forEach(day => {
+      workingDays.forEach(day => {
         const dateKey = format(day, 'yyyy-MM-dd');
         const existing = dailyBooked.get(dateKey) || { animation: 0, cg: 0, compositing: 0, fx: 0 };
         
@@ -163,13 +166,15 @@ export function aggregateToMonthly(
   months.forEach(month => {
     const monthStart = startOfMonth(month);
     const monthEnd = endOfMonth(month);
-    const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const allDaysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    // Only count working days (exclude weekends)
+    const workingDaysInMonth = allDaysInMonth.filter(day => !isWeekend(day));
     
     let animationNeeded = 0, cgNeeded = 0, compositingNeeded = 0, fxNeeded = 0;
     let animationBooked = 0, cgBooked = 0, compositingBooked = 0, fxBooked = 0;
     let dayCount = 0;
     
-    daysInMonth.forEach(day => {
+    workingDaysInMonth.forEach(day => {
       const dateKey = format(day, 'yyyy-MM-dd');
       const needs = dailyNeeds.get(dateKey);
       const booked = dailyBooked.get(dateKey);

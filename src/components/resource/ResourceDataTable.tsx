@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { format, addMonths, startOfMonth, differenceInMonths } from 'date-fns';
+import { format, addMonths, startOfMonth, endOfMonth, differenceInMonths, eachDayOfInterval, isWeekend } from 'date-fns';
 import {
   Table,
   TableBody,
@@ -135,13 +135,20 @@ export function ResourceDataTable({
       });
       
       // Convert daily totals to average daily artists per month
+      // Count actual working days that had data for each month
       monthlyData.forEach((data, key) => {
-        // Assuming ~22 working days per month, convert to average daily artists
-        const daysInMonth = 22;
-        data.animation = data.animation / daysInMonth;
-        data.cg = data.cg / daysInMonth;
-        data.compositing = data.compositing / daysInMonth;
-        data.fx = data.fx / daysInMonth;
+        // Parse the month key to get actual working days in that month
+        const [year, month] = key.split('-').map(Number);
+        const monthStart = new Date(year, month - 1, 1);
+        const monthEnd = endOfMonth(monthStart);
+        const allDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+        const workingDaysCount = allDays.filter(day => !isWeekend(day)).length;
+        
+        // Average = total daily values / working days in month
+        data.animation = workingDaysCount > 0 ? data.animation / workingDaysCount : 0;
+        data.cg = workingDaysCount > 0 ? data.cg / workingDaysCount : 0;
+        data.compositing = workingDaysCount > 0 ? data.compositing / workingDaysCount : 0;
+        data.fx = workingDaysCount > 0 ? data.fx / workingDaysCount : 0;
       });
       
       result.push({
