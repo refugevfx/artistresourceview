@@ -190,27 +190,27 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
                           border: `2px solid ${color}`,
                         };
                       } else if (allocation < 0.33) {
-                        // Sparse diagonal hash
+                        // Sparse diagonal hash - color and transparent
                         backgroundStyle = {
-                          backgroundColor: color,
+                          backgroundColor: 'transparent',
                           backgroundImage: `repeating-linear-gradient(
                             45deg,
-                            transparent,
-                            transparent 4px,
-                            rgba(255,255,255,0.5) 4px,
-                            rgba(255,255,255,0.5) 8px
+                            ${color},
+                            ${color} 3px,
+                            transparent 3px,
+                            transparent 8px
                           )`,
                         };
                       } else if (allocation < 0.66) {
-                        // Dense diagonal hash
+                        // Dense diagonal hash - color and transparent
                         backgroundStyle = {
-                          backgroundColor: color,
+                          backgroundColor: 'transparent',
                           backgroundImage: `repeating-linear-gradient(
                             45deg,
-                            transparent,
-                            transparent 2px,
-                            rgba(255,255,255,0.35) 2px,
-                            rgba(255,255,255,0.35) 4px
+                            ${color},
+                            ${color} 3px,
+                            transparent 3px,
+                            transparent 5px
                           )`,
                         };
                       }
