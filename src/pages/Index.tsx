@@ -1,14 +1,14 @@
-import { ProjectDashboard } from '@/components/dashboard/ProjectDashboard';
+import { ResourceDashboard } from '@/components/resource/ResourceDashboard';
 import { Helmet } from 'react-helmet-async';
 
 const Index = () => {
   return (
     <>
       <Helmet>
-        <title>VFX Production Dashboard | Flow Tracker</title>
-        <meta name="description" content="Real-time VFX production tracking dashboard. Monitor shot progress, artist workload, and project deadlines." />
+        <title>Resource Curves | Artist Planning</title>
+        <meta name="description" content="VFX studio resource planning tool. Track artist needs across projects and departments over time." />
       </Helmet>
-      <ProjectDashboard />
+      <ResourceDashboard />
     </>
   );
 };
