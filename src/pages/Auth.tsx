@@ -367,26 +367,26 @@ export default function Auth() {
           <meta name="description" content="Sign in to the dashboard to view project status, budget warnings, and artist workload." />
           <link rel="canonical" href={`${window.location.origin}/auth`} />
         </Helmet>
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
-          <Card className="w-full max-w-md border-border/50 shadow-xl">
-            <CardHeader className="text-center space-y-2">
-              <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-                <Shield className="h-6 w-6 text-primary" />
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-2">
+          <Card className="w-full max-w-xs border-border/50 shadow-lg">
+            <CardHeader className="text-center space-y-1 pb-2 pt-4 px-4">
+              <div className="mx-auto w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mb-1">
+                <Shield className="h-4 w-4 text-primary" />
               </div>
-              <CardTitle className="text-2xl font-bold">Dashboard Sign In</CardTitle>
-              <CardDescription className="text-muted-foreground">Sign in with your studio email to access the dashboard</CardDescription>
+              <CardTitle className="text-base font-semibold">Dashboard Sign In</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">Sign in with your studio email</CardDescription>
             </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pb-4 pt-0">
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-3 h-7">
+                <TabsTrigger value="signin" className="text-xs h-6">Sign In</TabsTrigger>
+                <TabsTrigger value="signup" className="text-xs h-6">Sign Up</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
+              <TabsContent value="signin" className="mt-0">
+                <form onSubmit={handleSignIn} className="space-y-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="signin-email" className="text-xs">Email</Label>
                     <Input
                       id="signin-email"
                       name="username"
@@ -396,15 +396,16 @@ export default function Auth() {
                       required
                       disabled={loading}
                       autoComplete="username"
+                      className="h-7 text-xs px-2"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="signin-password">Password</Label>
+                      <Label htmlFor="signin-password" className="text-xs">Password</Label>
                       <button
                         type="button"
                         onClick={() => setShowForgotPassword(true)}
-                        className="text-xs text-primary hover:underline"
+                        className="text-[10px] text-primary hover:underline"
                       >
                         Forgot password?
                       </button>
@@ -418,22 +419,23 @@ export default function Auth() {
                       required
                       disabled={loading}
                       autoComplete="current-password"
+                      className="h-7 text-xs px-2"
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  <Button type="submit" className="w-full h-7 text-xs mt-2" disabled={loading}>
+                    {loading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
                     Sign In
                   </Button>
                 </form>
               </TabsContent>
 
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="p-3 bg-muted/50 rounded-md text-sm text-muted-foreground mb-4">
+              <TabsContent value="signup" className="mt-0">
+                <form onSubmit={handleSignUp} className="space-y-2">
+                  <div className="p-2 bg-muted/50 rounded text-[10px] text-muted-foreground mb-2">
                     <strong>Note:</strong> Only registered studio emails can create accounts.
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Studio Email</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="signup-email" className="text-xs">Studio Email</Label>
                     <Input
                       id="signup-email"
                       name="email"
@@ -443,10 +445,11 @@ export default function Auth() {
                       required
                       disabled={loading}
                       autoComplete="email"
+                      className="h-7 text-xs px-2"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="signup-password" className="text-xs">Password</Label>
                     <Input
                       id="signup-password"
                       name="new-password"
@@ -456,10 +459,11 @@ export default function Auth() {
                       required
                       disabled={loading}
                       autoComplete="new-password"
+                      className="h-7 text-xs px-2"
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  <Button type="submit" className="w-full h-7 text-xs mt-2" disabled={loading}>
+                    {loading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
                     Create Account
                   </Button>
                 </form>
