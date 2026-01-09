@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RefreshCw, Eye, EyeOff, BarChart3, Table2, Maximize2, Lock } from 'lucide-react';
+import { RefreshCw, Eye, EyeOff, BarChart3, Table2, Maximize2, Lock, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { useNotionResourceData } from '@/hooks/useNotionResourceData';
 import { ResourceChart } from './ResourceChart';
 import { ResourceDataTable } from './ResourceDataTable';
+import { BookingsGanttChart } from './BookingsGanttChart';
 import { FilterControls } from './FilterControls';
 import { CurveSettingsDialog } from './CurveSettingsDialog';
 
@@ -17,6 +18,7 @@ export function ResourceDashboard() {
   const {
     projects,
     episodes,
+    bookings,
     dataPoints,
     peaks,
     isLoading,
@@ -147,6 +149,10 @@ export function ResourceDashboard() {
                     <BarChart3 className="h-3 w-3" />
                     Chart
                   </TabsTrigger>
+                  <TabsTrigger value="bookings" className="h-5 text-[10px] px-2 flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    Bookings
+                  </TabsTrigger>
                   <TabsTrigger value="table" className="h-5 text-[10px] px-2 flex items-center gap-1">
                     <Table2 className="h-3 w-3" />
                     Data Table
@@ -201,6 +207,20 @@ export function ResourceDashboard() {
                   visibleSeries={visibleSeries}
                   onToggleSeries={handleToggleSeries}
                   autoRescale={autoRescale}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="bookings" className="mt-0">
+              {isLoading ? (
+                <div className="h-[280px] flex items-center justify-center">
+                  <Skeleton className="h-[250px] w-full" />
+                </div>
+              ) : (
+                <BookingsGanttChart
+                  bookings={bookings}
+                  filters={filters}
+                  zoom={settings.zoom}
                 />
               )}
             </TabsContent>
