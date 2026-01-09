@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { RefreshCw, Eye, EyeOff, BarChart3, Table2 } from 'lucide-react';
+import { RefreshCw, Eye, EyeOff, BarChart3, Table2, Maximize2, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Toggle } from '@/components/ui/toggle';
 import { useNotionResourceData } from '@/hooks/useNotionResourceData';
 import { ResourceChart } from './ResourceChart';
 import { ResourceDataTable } from './ResourceDataTable';
@@ -38,6 +39,8 @@ export function ResourceDashboard() {
     TOTAL_NEEDED: false,
     TOTAL_BOOKED: false,
   });
+  
+  const [autoRescale, setAutoRescale] = useState(true);
 
   const handleShowBookedToggle = () => {
     setFilters({ showBooked: !filters.showBooked });
@@ -139,16 +142,29 @@ export function ResourceDashboard() {
         <Tabs defaultValue="chart" className="w-full">
           <CardHeader className="py-1.5 px-2">
             <div className="flex items-center justify-between">
-              <TabsList className="h-6">
-                <TabsTrigger value="chart" className="h-5 text-[10px] px-2 flex items-center gap-1">
-                  <BarChart3 className="h-3 w-3" />
-                  Chart
-                </TabsTrigger>
-                <TabsTrigger value="table" className="h-5 text-[10px] px-2 flex items-center gap-1">
-                  <Table2 className="h-3 w-3" />
-                  Data Table
-                </TabsTrigger>
-              </TabsList>
+              <div className="flex items-center gap-2">
+                <TabsList className="h-6">
+                  <TabsTrigger value="chart" className="h-5 text-[10px] px-2 flex items-center gap-1">
+                    <BarChart3 className="h-3 w-3" />
+                    Chart
+                  </TabsTrigger>
+                  <TabsTrigger value="table" className="h-5 text-[10px] px-2 flex items-center gap-1">
+                    <Table2 className="h-3 w-3" />
+                    Data Table
+                  </TabsTrigger>
+                </TabsList>
+                
+                {/* Auto Rescale Toggle */}
+                <Toggle
+                  pressed={autoRescale}
+                  onPressedChange={setAutoRescale}
+                  size="sm"
+                  className="h-5 px-1.5 text-[9px] gap-0.5"
+                  title={autoRescale ? "Auto-rescale on" : "Scale locked"}
+                >
+                  {autoRescale ? <Maximize2 className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                </Toggle>
+              </div>
               
               {/* Peak indicators */}
               <div className="flex gap-2 text-[9px] text-muted-foreground">
@@ -185,6 +201,7 @@ export function ResourceDashboard() {
                   animationKey={animationKey}
                   visibleSeries={visibleSeries}
                   onToggleSeries={handleToggleSeries}
+                  autoRescale={autoRescale}
                 />
               )}
             </TabsContent>
