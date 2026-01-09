@@ -226,7 +226,10 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
                                 ...backgroundStyle,
                               }}
                             >
-                              <span className="px-1 text-[9px] truncate block leading-5 font-medium" style={{ color: allocation === 0 ? color : '#1a1a1a' }}>
+                              <span 
+                                className="px-1 text-[9px] truncate block leading-5 font-medium" 
+                                style={{ color: allocation === 0 ? color : allocation < 0.66 ? '#ffffff' : '#1a1a1a' }}
+                              >
                                 {row.name}
                               </span>
                             </div>
