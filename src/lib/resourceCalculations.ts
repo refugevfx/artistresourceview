@@ -213,27 +213,51 @@ export function aggregateToMonthly(
   return dataPoints;
 }
 
-// Get timeline bounds based on zoom level
-export function getTimelineBounds(zoom: 'month' | 'quarter' | 'year' | '2year'): { start: Date; end: Date } {
+// Get timeline bounds based on zoom level and optionally filtered episodes
+export function getTimelineBounds(
+  zoom: 'month' | 'quarter' | 'year' | '2year',
+  filteredEpisodes?: NotionEpisode[]
+): { start: Date; end: Date } {
   const now = new Date();
-  const start = startOfMonth(addMonths(now, -1)); // Start 1 month ago
+  
+  // Check if we should show historical data (all filtered episodes are in the past)
+  if (filteredEpisodes && filteredEpisodes.length > 0) {
+    const episodesWithDates = filteredEpisodes.filter(e => e.startDate && e.endDate);
+    
+    if (episodesWithDates.length > 0) {
+      const endDates = episodesWithDates.map(e => parseISO(e.endDate!));
+      const startDates = episodesWithDates.map(e => parseISO(e.startDate!));
+      const maxEndDate = new Date(Math.max(...endDates.map(d => d.getTime())));
+      const minStartDate = new Date(Math.min(...startDates.map(d => d.getTime())));
+      
+      // All episodes are in the past - shift timeline to show them
+      if (maxEndDate < now) {
+        const start = startOfMonth(addMonths(minStartDate, -1));
+        const end = endOfMonth(addMonths(maxEndDate, 1));
+        return { start, end };
+      }
+    }
+  }
+  
+  // Default behavior: anchor to now
+  const start = startOfMonth(addMonths(now, -1));
   
   let end: Date;
   switch (zoom) {
     case 'month':
-      end = endOfMonth(addMonths(now, 2)); // 3 months total
+      end = endOfMonth(addMonths(now, 2));
       break;
     case 'quarter':
-      end = endOfMonth(addMonths(now, 5)); // 6 months total
+      end = endOfMonth(addMonths(now, 5));
       break;
     case 'year':
-      end = endOfYear(now); // Through end of current year
+      end = endOfYear(now);
       break;
     case '2year':
-      end = endOfYear(addYears(now, 1)); // Through end of next year
+      end = endOfYear(addYears(now, 1));
       break;
     default:
-      end = endOfMonth(addMonths(now, 11)); // 12 months default
+      end = endOfMonth(addMonths(now, 11));
   }
   
   return { start, end };
