@@ -43,6 +43,7 @@ export interface NotionProject {
   startDate: string | null;
   endDate: string | null;
   episodes: NotionEpisode[];
+  parentId?: string | null; // If set, this is a child/episode entry
 }
 
 export interface NotionEpisode {
