@@ -189,11 +189,11 @@ export function BookingsGanttChart({ bookings, filters, zoom }: BookingsGanttCha
                                 opacity,
                               }}
                             >
-                            <span className="px-1 text-[9px] text-white truncate block leading-5 font-medium">
+                            <span className="px-1 text-[9px] text-foreground truncate block leading-5 font-medium">
                               {row.name}
                             </span>
                           </div>
-                          </TooltipTrigger>
+                        </TooltipTrigger>
                         <TooltipContent side="top" className="text-xs">
                           <div className="space-y-0.5">
                             <div className="font-medium">{row.name}</div>
