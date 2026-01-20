@@ -42,7 +42,7 @@ interface UseNotionResourceDataReturn {
 const DEFAULT_FILTERS: ResourceFilters = {
   projectId: null,
   episodeId: null,
-  statuses: ['Active', 'Prospect', 'Bidding'],
+  statuses: ['Active', 'Prospect', 'Bidding', 'Booked'],
   regions: [],
   showBooked: false,
 };

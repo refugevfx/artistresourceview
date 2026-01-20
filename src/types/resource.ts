@@ -4,7 +4,7 @@ export type Department = 'Animation' | 'CG' | 'Compositing' | 'FX';
 
 export type Region = 'California' | 'Oregon' | 'Vancouver';
 
-export type ProjectStatus = 'Active' | 'Prospect' | 'Bidding' | 'Completed' | 'Inactive';
+export type ProjectStatus = 'Active' | 'Prospect' | 'Bidding' | 'Booked' | 'Completed' | 'Inactive';
 
 export type TimelineZoom = 'month' | 'quarter' | 'year' | '2year';
 
