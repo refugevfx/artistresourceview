@@ -28,7 +28,7 @@ interface FilterControlsProps {
   onZoomChange: (zoom: TimelineZoom) => void;
 }
 
-const STATUS_OPTIONS: ProjectStatus[] = ['Active', 'Prospect', 'Bidding', 'Completed'];
+const STATUS_OPTIONS: ProjectStatus[] = ['Active', 'Prospect', 'Bidding', 'Booked', 'Completed'];
 const REGION_OPTIONS: Region[] = ['California', 'Oregon', 'Vancouver'];
 const ZOOM_OPTIONS: { value: TimelineZoom; label: string }[] = [
   { value: 'month', label: '3 Mo' },
