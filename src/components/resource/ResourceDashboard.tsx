@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { RefreshCw, Eye, EyeOff, BarChart3, Table2, Maximize2, Lock, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { RefreshCw, Eye, EyeOff, BarChart3, Table2, Maximize2, Lock, Users, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -13,8 +14,10 @@ import { ResourceDataTable } from './ResourceDataTable';
 import { BookingsGanttChart } from './BookingsGanttChart';
 import { FilterControls } from './FilterControls';
 import { CurveSettingsDialog } from './CurveSettingsDialog';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 
 export function ResourceDashboard() {
+  const { isAdmin } = useAdminCheck();
   const {
     projects,
     episodes,
@@ -124,6 +127,19 @@ export function ResourceDashboard() {
           >
             <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
+
+          {isAdmin && (
+            <Link to="/admin">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-primary hover:text-primary/80"
+                title="Admin Panel"
+              >
+                <Shield className="h-3 w-3" />
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
