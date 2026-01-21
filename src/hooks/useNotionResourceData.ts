@@ -26,6 +26,7 @@ interface UseNotionResourceDataReturn {
   dataPoints: ResourceDataPoint[];
   peaks: { animation: number; cg: number; compositing: number; fx: number };
   isLoading: boolean;
+  isFetchingAll: boolean;
   isRefreshingBookings: boolean;
   isRefreshingBids: boolean;
   error: string | null;
@@ -59,6 +60,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
   const [dataPoints, setDataPoints] = useState<ResourceDataPoint[]>([]);
   const [peaks, setPeaks] = useState({ animation: 0, cg: 0, compositing: 0, fx: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingAll, setIsFetchingAll] = useState(false);
   const [isRefreshingBookings, setIsRefreshingBookings] = useState(false);
   const [isRefreshingBids, setIsRefreshingBids] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -305,9 +307,14 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
     }
   }, [fetchBookings, calculateData, settings, filters, episodes]);
 
-  // Full refresh - all data
+  // Full refresh - all data (keeps existing curves visible during fetch)
   const refreshAll = useCallback(async () => {
-    setIsLoading(true);
+    // Only show loading skeleton on initial load (no data yet)
+    const isInitialLoad = episodes.length === 0;
+    if (isInitialLoad) {
+      setIsLoading(true);
+    }
+    setIsFetchingAll(true);
     setError(null);
 
     try {
@@ -321,10 +328,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
       // Fetch budgets with project data for mapping
       const episodesData = await fetchBudgets(projectsData, filters.statuses);
 
-      setProjects(projectsData);
-      setEpisodes(episodesData);
-      setBookings(bookingsData);
-
+      // Calculate new data before updating state (atomic update)
       const { points, peaks: peakValues } = calculateData(
         episodesData, 
         bookingsData, 
@@ -333,6 +337,10 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
         settings.zoom
       );
       
+      // Update all state at once after data is ready
+      setProjects(projectsData);
+      setEpisodes(episodesData);
+      setBookings(bookingsData);
       setDataPoints(points);
       setPeaks(peakValues);
       setAnimationKey(prev => prev + 1); // Trigger animation
@@ -342,8 +350,9 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
     } finally {
       setIsLoading(false);
+      setIsFetchingAll(false);
     }
-  }, [fetchProjects, fetchBudgets, fetchBookings, calculateData, settings, filters]);
+  }, [fetchProjects, fetchBudgets, fetchBookings, calculateData, settings, filters, episodes.length]);
 
   // Recalculate when filters or settings change (but don't refetch)
   useEffect(() => {
@@ -372,6 +381,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
     dataPoints,
     peaks,
     isLoading,
+    isFetchingAll,
     isRefreshingBookings,
     isRefreshingBids,
     error,

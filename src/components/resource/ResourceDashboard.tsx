@@ -25,6 +25,7 @@ export function ResourceDashboard() {
     dataPoints,
     peaks,
     isLoading,
+    isFetchingAll,
     isRefreshingBookings,
     isRefreshingBids,
     error,
@@ -122,10 +123,10 @@ export function ResourceDashboard() {
             size="icon"
             className="h-6 w-6"
             onClick={refreshAll}
-            disabled={isLoading || isRefreshingBookings || isRefreshingBids}
-            title="Refresh All"
+            disabled={isLoading || isFetchingAll}
+            title="Refresh All Data"
           >
-            <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-3 w-3 ${(isLoading || isFetchingAll) ? 'animate-spin' : ''}`} />
           </Button>
 
           {isAdmin && (
