@@ -23,7 +23,7 @@ export interface DepartmentCurveSettings {
 export const DEFAULT_CURVE_SETTINGS: DepartmentCurveSettings = {
   Animation: [0.10, 0.30, 0.30, 0.20, 0.10], // Front loaded
   CG: [0.10, 0.30, 0.30, 0.20, 0.10],        // Front loaded
-  Compositing: [0.10, 0.20, 0.30, 0.30, 0.10], // Back loaded
+  Compositing: [0.10, 0.11, 0.30, 0.38, 0.11], // Back loaded (peaks at 75%)
   FX: [0.01, 0.20, 0.58, 0.20, 0.01],        // Pinched bell curve
 };
 
@@ -33,7 +33,7 @@ export const CURVE_PRESETS = {
   frontLoaded: [0.10, 0.30, 0.30, 0.20, 0.10] as DistributionCurve,
   bellCurve: [0.01, 0.31, 0.36, 0.31, 0.01] as DistributionCurve,
   pinchedBell: [0.01, 0.20, 0.58, 0.20, 0.01] as DistributionCurve,
-  backLoaded: [0.10, 0.20, 0.30, 0.30, 0.10] as DistributionCurve,
+  backLoaded: [0.10, 0.11, 0.30, 0.38, 0.11] as DistributionCurve,
   rampUp: [0.05, 0.15, 0.25, 0.25, 0.3] as DistributionCurve,
 };
 
