@@ -1,168 +1,173 @@
 
 
-## Display Raw Bid Day Totals in Data Table
+## Display Source Bid Names for QC in Data Table
 
 ### Overview
-Add a reference column next to each department row in the TOTALS section that shows the **raw bid day totals** from Notion (the original input values before distribution calculations). This provides a verification reference to compare distributed values against the original source data.
+Preserve and display the individual bid names from Notion that contribute to each episode's totals, allowing users to visually verify which bids are included in the calculations.
 
 ---
 
-### User Experience
+### Current State Analysis
 
-**Visual Design**: Display the raw bid total in parentheses or a separate column next to the department label in the TOTALS section.
+**Good news**: The Notion proxy already fetches bid names from the "Bid Name" property (line 215 in `notion-proxy/index.ts`).
 
-For example, the current view:
-```
-TOTALS          | Jan 26 | Feb 26 | ...
-  ANM           |   -    |   -    | ...
-  CG            |   -    |   -    | ...
-```
+**Problem**: The bid names are lost during data processing in `useNotionResourceData.ts`. When multiple bids are aggregated for an episode (lines 165-170), only the man-day values are summed - the individual bid identifiers are discarded.
 
-Proposed view:
+**Data Flow**:
 ```
-TOTALS          | Total | Jan 26 | Feb 26 | ...
-  ANM (127.6)   |   -   |   -    |   -    | ...
-  CG (165.5)    |   -   |   -    |   -    | ...
+Notion Bids DB → notion-proxy (has bid names) 
+    → useNotionResourceData (loses bid names during aggregation) 
+    → episodes array (no bid names)
+    → ResourceDataTable (cannot display what it doesn't have)
 ```
-
-Or alternatively, add a dedicated "Total" column:
-```
-TOTALS          | Bid  | Jan 26 | Feb 26 | ...
-  ANM           | 128  |   -    |   -    | ...
-  CG            | 166  |   -    |   -    | ...
-```
-
-The second approach (dedicated "Bid" column) is cleaner and easier to compare.
 
 ---
 
-### Technical Approach
+### Technical Solution
 
-#### File: `src/components/resource/ResourceDataTable.tsx`
+#### 1. Add Type for Bid Reference
 
-**1. Calculate Raw Bid Totals**
+**File: `src/types/resource.ts`**
 
-Add a new `useMemo` hook to sum the raw bid day values from the filtered episodes:
-
-```typescript
-// Calculate raw bid totals from Notion data (before distribution)
-const rawBidTotals = useMemo(() => {
-  let animation = 0, cg = 0, compositing = 0, fx = 0;
-  
-  filteredProjects.forEach(project => {
-    const projectIds = [project.id];
-    projects.forEach(p => {
-      if (p.parentId === project.id) projectIds.push(p.id);
-    });
-    
-    let projectEpisodes = episodes.filter(ep => projectIds.includes(ep.projectId));
-    if (filters.episodeId) {
-      projectEpisodes = projectEpisodes.filter(ep => ep.id === filters.episodeId);
-    }
-    
-    projectEpisodes.forEach(ep => {
-      animation += ep.animationDays;
-      cg += ep.cgDays;
-      compositing += ep.compositingDays;
-      fx += ep.fxDays;
-    });
-  });
-  
-  return { animation, cg, compositing, fx };
-}, [filteredProjects, projects, episodes, filters.episodeId]);
-```
-
-**2. Add Raw Bid Totals Per Project**
-
-Extend the `ProjectMonthlyData` interface and calculation to include per-project raw bid totals:
+Add a new interface to track source bids:
 
 ```typescript
-interface ProjectMonthlyData {
-  projectId: string;
-  projectName: string;
-  months: Map<string, MonthlyData>;
-  rawBidTotals: MonthlyData;  // Add this field
+export interface BidReference {
+  id: string;
+  name: string;
+  animationDays: number;
+  cgDays: number;
+  compositingDays: number;
+  fxDays: number;
 }
 ```
 
-**3. Add "Bid" Column to Table Header**
-
-Insert a new column between "Project / Dept" and the first month:
+Extend `NotionEpisode` to include source bids:
 
 ```typescript
-<TableHeader>
-  <TableRow className="h-6">
-    <TableHead className="sticky left-0 z-10 bg-background min-w-[120px] py-1 text-[9px]">
-      Project / Dept
-      <span className="text-muted-foreground ml-1">
-        ({displayMode === 'avgArtists' ? 'avg' : 'days'}{aggregationMode === 'cumulative' ? ', cum' : ''})
-      </span>
-    </TableHead>
-    <TableHead className="text-center min-w-[45px] py-1 text-[9px] bg-muted/20">
-      Bid
-    </TableHead>
-    {months.map(m => (
-      <TableHead key={m.key} className="text-center min-w-[45px] py-1 text-[9px]">
-        {m.label}
-      </TableHead>
-    ))}
-  </TableRow>
-</TableHeader>
+export interface NotionEpisode {
+  // ... existing fields ...
+  sourceBids?: BidReference[];  // Track which bids contributed
+}
 ```
 
-**4. Display Raw Values in TOTALS Section**
+#### 2. Preserve Bid Names During Aggregation
 
-In the department rows under TOTALS, add a cell for the raw bid total:
+**File: `src/hooks/useNotionResourceData.ts`**
+
+In the `fetchBudgets` function, modify the aggregation logic to preserve bid references:
 
 ```typescript
-{DEPARTMENTS.map(dept => (
-  <TableRow key={`total-${dept.key}`} className="bg-muted/30 h-5">
-    <TableCell className={`sticky left-0 z-10 bg-muted/30 pl-4 py-0.5 ${dept.color}`}>
-      {dept.label}
-    </TableCell>
-    <TableCell className={`text-center font-medium py-0.5 bg-muted/20 ${dept.color}`}>
-      {rawBidTotals[dept.key].toFixed(1)}
-    </TableCell>
-    {months.map(m => {
-      const val = totals.get(m.key)?.[dept.key] || 0;
-      return (
-        <TableCell key={m.key} className={`text-center font-medium py-0.5 ${dept.color}`}>
-          {formatValue(val)}
-        </TableCell>
-      );
-    })}
-  </TableRow>
-))}
+// When creating/updating an episode entry
+if (existing) {
+  existing.animationDays += scaledAnimationDays;
+  // ... other days ...
+  existing.sourceBids = existing.sourceBids || [];
+  existing.sourceBids.push({
+    id: budget.id,
+    name: budget.name,
+    animationDays: scaledAnimationDays,
+    cgDays: scaledCgDays,
+    compositingDays: scaledCompositingDays,
+    fxDays: scaledFxDays,
+  });
+} else {
+  episodeMap.set(key, {
+    // ... existing fields ...
+    sourceBids: [{
+      id: budget.id,
+      name: budget.name,
+      animationDays: scaledAnimationDays,
+      cgDays: scaledCgDays,
+      compositingDays: scaledCompositingDays,
+      fxDays: scaledFxDays,
+    }],
+  });
+}
 ```
 
-**5. Display Raw Values in Project Rows**
+#### 3. Display Bid Names in Data Table
 
-Similarly, add bid totals for each project's department rows.
+**File: `src/components/resource/ResourceDataTable.tsx`**
+
+Add a collapsible section below the table showing included bids:
+
+```typescript
+// Calculate included bids from filtered episodes
+const includedBids = useMemo(() => {
+  const bids: BidReference[] = [];
+  filteredProjects.forEach(project => {
+    // Get episodes for this project
+    let projectEpisodes = episodes.filter(...);
+    if (filters.episodeId) {
+      projectEpisodes = projectEpisodes.filter(ep => ep.id === filters.episodeId);
+    }
+    projectEpisodes.forEach(ep => {
+      if (ep.sourceBids) {
+        bids.push(...ep.sourceBids);
+      }
+    });
+  });
+  return bids;
+}, [filteredProjects, episodes, filters]);
+```
+
+Display below the table:
+
+```tsx
+{/* Source Bids Section */}
+<div className="mt-2 px-1">
+  <details className="text-[9px]">
+    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+      Source Bids ({includedBids.length})
+    </summary>
+    <div className="mt-1 p-2 bg-muted/20 rounded-md max-h-[100px] overflow-y-auto">
+      {includedBids.map(bid => (
+        <div key={bid.id} className="flex justify-between py-0.5 border-b border-muted/30 last:border-0">
+          <span className="font-medium">{bid.name}</span>
+          <span className="text-muted-foreground">
+            ANM: {bid.animationDays} | CG: {bid.cgDays} | COMP: {bid.compositingDays} | FX: {bid.fxDays}
+          </span>
+        </div>
+      ))}
+      {includedBids.length === 0 && (
+        <span className="text-muted-foreground">No bids found for current selection</span>
+      )}
+    </div>
+  </details>
+</div>
+```
 
 ---
 
-### Implementation Summary
+### Implementation Steps
 
-1. Add `rawBidTotals` useMemo to calculate sum of raw episode bid days
-2. Extend `ProjectMonthlyData` to include per-project raw bid totals
-3. Add "Bid" column header between "Project / Dept" and first month
-4. Add cells in TOTALS department rows showing raw bid values
-5. Add cells in project department rows showing per-project raw bid values
-6. Use distinct styling (e.g., `bg-muted/20`) for the Bid column to visually separate it from calculated months
+1. **Update `src/types/resource.ts`**
+   - Add `BidReference` interface
+   - Add optional `sourceBids` field to `NotionEpisode`
 
----
+2. **Update `src/hooks/useNotionResourceData.ts`**
+   - Modify budget aggregation to preserve bid references
+   - Include bid name and per-department values in the reference
 
-### Mapping for Department Keys
-
-The `DEPARTMENTS` array uses lowercase keys (`animation`, `cg`, `compositing`, `fx`) which need to map to episode properties (`animationDays`, `cgDays`, `compositingDays`, `fxDays`).
+3. **Update `src/components/resource/ResourceDataTable.tsx`**
+   - Add `useMemo` to collect included bids from filtered episodes
+   - Add collapsible details section below the table
+   - Display bid names with their individual department values
 
 ---
 
 ### Expected Result
 
-When viewing "Bad Monkey S2" with all episodes:
-- The "Bid" column will show the sum of all episode bid days per department
-- For example, if ANM has 127.6 total days across all episodes, it shows "128" in the Bid column
-- When filtering to a single episode, the Bid column updates to show just that episode's values
-- The monthly columns continue to show distributed/calculated values based on the current display mode
+For MRCL_201 with two bids:
+- The "Source Bids" section will expand to show both bid names
+- Each bid shows its individual contribution: `ANM: 45 | CG: 30 | COMP: 20 | FX: 10`
+- The Bid column totals will match the sum of these individual values
+- Filtering to a different episode will update the displayed bids
+
+---
+
+### No New Database Tables Required
+
+This solution modifies the in-memory data structures only. The bid information is already available in the Notion API response - we just need to preserve it through the processing pipeline and display it in the UI.
 
