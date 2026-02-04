@@ -1,34 +1,38 @@
 
 
-## Add Data Table Display Mode Toggles
+## Display Raw Bid Day Totals in Data Table
 
 ### Overview
-Add two toggle controls to the Data Table view that allow switching between:
-1. **Value Type**: "Average Artists" (current behavior) vs "Bid Days" (total distributed days per month)
-2. **Aggregation Mode**: "Monthly" (per-month values) vs "Cumulative" (running totals)
-
-This enables viewing total cumulative days per episode per department.
+Add a reference column next to each department row in the TOTALS section that shows the **raw bid day totals** from Notion (the original input values before distribution calculations). This provides a verification reference to compare distributed values against the original source data.
 
 ---
 
 ### User Experience
 
-**Toggle Placement**: Both toggles will appear in the Data Table tab header area, visible only when the Data Table tab is active.
+**Visual Design**: Display the raw bid total in parentheses or a separate column next to the department label in the TOTALS section.
 
-**Toggle 1 - Value Type**:
-- "Avg Artists" (default) - Shows average concurrent artists needed per working day in each month
-- "Bid Days" - Shows total distributed man-days falling in each month
+For example, the current view:
+```
+TOTALS          | Jan 26 | Feb 26 | ...
+  ANM           |   -    |   -    | ...
+  CG            |   -    |   -    | ...
+```
 
-**Toggle 2 - Aggregation Mode**:
-- "Monthly" (default) - Each column shows that month's values independently
-- "Cumulative" - Each column shows the running sum from the first month through that month
+Proposed view:
+```
+TOTALS          | Total | Jan 26 | Feb 26 | ...
+  ANM (127.6)   |   -   |   -    |   -    | ...
+  CG (165.5)    |   -   |   -    |   -    | ...
+```
 
-**Example with Cumulative Bid Days**:
-| Dept | Jan | Feb | Mar |
-|------|-----|-----|-----|
-| COMP | 10  | 25  | 40  |
+Or alternatively, add a dedicated "Total" column:
+```
+TOTALS          | Bid  | Jan 26 | Feb 26 | ...
+  ANM           | 128  |   -    |   -    | ...
+  CG            | 166  |   -    |   -    | ...
+```
 
-This shows that by end of March, 40 total compositing days have been distributed.
+The second approach (dedicated "Bid" column) is cleaner and easier to compare.
 
 ---
 
@@ -36,122 +40,129 @@ This shows that by end of March, 40 total compositing days have been distributed
 
 #### File: `src/components/resource/ResourceDataTable.tsx`
 
-**1. Add State for Toggle Values**
+**1. Calculate Raw Bid Totals**
+
+Add a new `useMemo` hook to sum the raw bid day values from the filtered episodes:
+
 ```typescript
-const [displayMode, setDisplayMode] = useState<'avgArtists' | 'bidDays'>('avgArtists');
-const [aggregationMode, setAggregationMode] = useState<'monthly' | 'cumulative'>('monthly');
+// Calculate raw bid totals from Notion data (before distribution)
+const rawBidTotals = useMemo(() => {
+  let animation = 0, cg = 0, compositing = 0, fx = 0;
+  
+  filteredProjects.forEach(project => {
+    const projectIds = [project.id];
+    projects.forEach(p => {
+      if (p.parentId === project.id) projectIds.push(p.id);
+    });
+    
+    let projectEpisodes = episodes.filter(ep => projectIds.includes(ep.projectId));
+    if (filters.episodeId) {
+      projectEpisodes = projectEpisodes.filter(ep => ep.id === filters.episodeId);
+    }
+    
+    projectEpisodes.forEach(ep => {
+      animation += ep.animationDays;
+      cg += ep.cgDays;
+      compositing += ep.compositingDays;
+      fx += ep.fxDays;
+    });
+  });
+  
+  return { animation, cg, compositing, fx };
+}, [filteredProjects, projects, episodes, filters.episodeId]);
 ```
 
-**2. Modify Data Calculation Logic**
+**2. Add Raw Bid Totals Per Project**
 
-Currently the code:
-- Sums daily distributed values into monthly buckets
-- Divides by working days to get average artists
-
-Changes needed:
-- Store BOTH the raw summed days AND the averaged values
-- Apply the averaging only when `displayMode === 'avgArtists'`
-- For cumulative mode, calculate running totals across months
+Extend the `ProjectMonthlyData` interface and calculation to include per-project raw bid totals:
 
 ```typescript
-// Store raw sums before averaging
-const rawMonthlyData = new Map<string, MonthlyData>();
-
-// After aggregating daily needs into months (existing logic)
-// Keep the raw sum before dividing
-
-// Then conditionally apply averaging
-if (displayMode === 'avgArtists') {
-  // Current logic: divide by working days
+interface ProjectMonthlyData {
+  projectId: string;
+  projectName: string;
+  months: Map<string, MonthlyData>;
+  rawBidTotals: MonthlyData;  // Add this field
 }
-
-// For cumulative mode, transform the final data
-if (aggregationMode === 'cumulative') {
-  // Calculate running totals across months in order
-}
 ```
 
-**3. Add Toggle UI Components**
+**3. Add "Bid" Column to Table Header**
 
-Use `ToggleGroup` for a clean segmented control appearance:
+Insert a new column between "Project / Dept" and the first month:
 
 ```typescript
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-
-// In the component JSX, above the ScrollArea:
-<div className="flex items-center gap-3 mb-2 px-1">
-  <ToggleGroup 
-    type="single" 
-    value={displayMode} 
-    onValueChange={(v) => v && setDisplayMode(v)}
-    className="h-5"
-  >
-    <ToggleGroupItem value="avgArtists" className="h-5 px-2 text-[9px]">
-      Avg Artists
-    </ToggleGroupItem>
-    <ToggleGroupItem value="bidDays" className="h-5 px-2 text-[9px]">
-      Bid Days
-    </ToggleGroupItem>
-  </ToggleGroup>
-
-  <ToggleGroup 
-    type="single" 
-    value={aggregationMode} 
-    onValueChange={(v) => v && setAggregationMode(v)}
-    className="h-5"
-  >
-    <ToggleGroupItem value="monthly" className="h-5 px-2 text-[9px]">
-      Monthly
-    </ToggleGroupItem>
-    <ToggleGroupItem value="cumulative" className="h-5 px-2 text-[9px]">
-      Cumulative
-    </ToggleGroupItem>
-  </ToggleGroup>
-</div>
+<TableHeader>
+  <TableRow className="h-6">
+    <TableHead className="sticky left-0 z-10 bg-background min-w-[120px] py-1 text-[9px]">
+      Project / Dept
+      <span className="text-muted-foreground ml-1">
+        ({displayMode === 'avgArtists' ? 'avg' : 'days'}{aggregationMode === 'cumulative' ? ', cum' : ''})
+      </span>
+    </TableHead>
+    <TableHead className="text-center min-w-[45px] py-1 text-[9px] bg-muted/20">
+      Bid
+    </TableHead>
+    {months.map(m => (
+      <TableHead key={m.key} className="text-center min-w-[45px] py-1 text-[9px]">
+        {m.label}
+      </TableHead>
+    ))}
+  </TableRow>
+</TableHeader>
 ```
 
-**4. Update formatValue Function**
+**4. Display Raw Values in TOTALS Section**
 
-Adjust decimal precision based on display mode:
+In the department rows under TOTALS, add a cell for the raw bid total:
+
 ```typescript
-const formatValue = (val: number) => {
-  if (val === 0) return '-';
-  // Bid Days typically larger numbers, may want different precision
-  return displayMode === 'bidDays' 
-    ? val.toFixed(1)  // or val.toFixed(0) for whole days
-    : val.toFixed(1);
-};
+{DEPARTMENTS.map(dept => (
+  <TableRow key={`total-${dept.key}`} className="bg-muted/30 h-5">
+    <TableCell className={`sticky left-0 z-10 bg-muted/30 pl-4 py-0.5 ${dept.color}`}>
+      {dept.label}
+    </TableCell>
+    <TableCell className={`text-center font-medium py-0.5 bg-muted/20 ${dept.color}`}>
+      {rawBidTotals[dept.key].toFixed(1)}
+    </TableCell>
+    {months.map(m => {
+      const val = totals.get(m.key)?.[dept.key] || 0;
+      return (
+        <TableCell key={m.key} className={`text-center font-medium py-0.5 ${dept.color}`}>
+          {formatValue(val)}
+        </TableCell>
+      );
+    })}
+  </TableRow>
+))}
 ```
 
-**5. Update Column Headers**
+**5. Display Raw Values in Project Rows**
 
-Add visual indicator of current mode in the header:
-```typescript
-<TableHead className="sticky left-0 z-10 bg-background min-w-[120px] py-1 text-[9px]">
-  Project / Dept
-  <span className="text-muted-foreground ml-1">
-    ({displayMode === 'avgArtists' ? 'avg' : 'days'})
-  </span>
-</TableHead>
-```
+Similarly, add bid totals for each project's department rows.
 
 ---
 
-### Implementation Steps
+### Implementation Summary
 
-1. Add `useState` hooks for `displayMode` and `aggregationMode`
-2. Restructure `projectData` calculation to preserve raw sums before averaging
-3. Add conditional logic to skip averaging when showing Bid Days
-4. Add cumulative calculation step when aggregation mode is cumulative
-5. Apply same logic to the `totals` calculation
-6. Add ToggleGroup UI components above the table
-7. Update header to indicate current display mode
+1. Add `rawBidTotals` useMemo to calculate sum of raw episode bid days
+2. Extend `ProjectMonthlyData` to include per-project raw bid totals
+3. Add "Bid" column header between "Project / Dept" and first month
+4. Add cells in TOTALS department rows showing raw bid values
+5. Add cells in project department rows showing per-project raw bid values
+6. Use distinct styling (e.g., `bg-muted/20`) for the Bid column to visually separate it from calculated months
 
 ---
 
-### Edge Cases
+### Mapping for Department Keys
 
-- **Cumulative with multiple projects**: Each project's cumulative totals are independent; the TOTALS row shows cumulative sum across all projects
-- **Empty months**: Zero values in cumulative mode still show the last non-zero cumulative value
-- **Partial month filtering**: When viewing a single episode, cumulative shows running total for that episode only
+The `DEPARTMENTS` array uses lowercase keys (`animation`, `cg`, `compositing`, `fx`) which need to map to episode properties (`animationDays`, `cgDays`, `compositingDays`, `fxDays`).
+
+---
+
+### Expected Result
+
+When viewing "Bad Monkey S2" with all episodes:
+- The "Bid" column will show the sum of all episode bid days per department
+- For example, if ANM has 127.6 total days across all episodes, it shows "128" in the Bid column
+- When filtering to a single episode, the Bid column updates to show just that episode's values
+- The monthly columns continue to show distributed/calculated values based on the current display mode
 
