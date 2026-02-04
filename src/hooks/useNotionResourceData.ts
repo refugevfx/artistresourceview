@@ -162,12 +162,25 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
       const scaledCompositingDays = budget.compositingDays * linkedEpisodeCount;
       const scaledFxDays = budget.fxDays * linkedEpisodeCount;
       
+      // Create bid reference for tracking
+      const bidRef = {
+        id: budget.id,
+        name: budget.name,
+        animationDays: scaledAnimationDays,
+        cgDays: scaledCgDays,
+        compositingDays: scaledCompositingDays,
+        fxDays: scaledFxDays,
+      };
+
       if (existing) {
         // Aggregate man-days for same episode
         existing.animationDays += scaledAnimationDays;
         existing.cgDays += scaledCgDays;
         existing.compositingDays += scaledCompositingDays;
         existing.fxDays += scaledFxDays;
+        // Preserve bid reference
+        existing.sourceBids = existing.sourceBids || [];
+        existing.sourceBids.push(bidRef);
       } else {
         episodeMap.set(key, {
           id: episodeId || budget.id,
@@ -180,6 +193,7 @@ export function useNotionResourceData(): UseNotionResourceDataReturn {
           cgDays: scaledCgDays,
           compositingDays: scaledCompositingDays,
           fxDays: scaledFxDays,
+          sourceBids: [bidRef],
         });
       }
     });

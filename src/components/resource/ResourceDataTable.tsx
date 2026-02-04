@@ -17,7 +17,10 @@ import {
   DepartmentCurveSettings,
   TimelineZoom,
   Department,
+  BidReference,
 } from '@/types/resource';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
 import { calculateEpisodeNeeds, getTimelineBounds } from '@/lib/resourceCalculations';
 
 type DisplayMode = 'avgArtists' | 'bidDays';
@@ -308,6 +311,31 @@ export function ResourceDataTable({
     return totals;
   }, [projectData]);
 
+  // Collect all source bids from filtered episodes for QC display
+  const includedBids = useMemo(() => {
+    const bids: BidReference[] = [];
+    
+    filteredProjects.forEach(project => {
+      const projectIds = [project.id];
+      projects.forEach(p => {
+        if (p.parentId === project.id) projectIds.push(p.id);
+      });
+      
+      let projectEpisodes = episodes.filter(ep => projectIds.includes(ep.projectId));
+      if (filters.episodeId) {
+        projectEpisodes = projectEpisodes.filter(ep => ep.id === filters.episodeId);
+      }
+      
+      projectEpisodes.forEach(ep => {
+        if (ep.sourceBids) {
+          bids.push(...ep.sourceBids);
+        }
+      });
+    });
+    
+    return bids;
+  }, [filteredProjects, projects, episodes, filters.episodeId]);
+
   const formatValue = (val: number) => {
     if (val === 0) return '-';
     return displayMode === 'bidDays' ? val.toFixed(0) : val.toFixed(1);
@@ -442,6 +470,30 @@ export function ResourceDataTable({
         <ScrollBar orientation="horizontal" />
         <ScrollBar orientation="vertical" />
       </ScrollArea>
+
+      {/* Source Bids QC Section */}
+      <Collapsible className="px-1">
+        <CollapsibleTrigger className="flex items-center gap-1 text-[9px] text-muted-foreground hover:text-foreground cursor-pointer">
+          <ChevronDown className="h-3 w-3" />
+          Source Bids ({includedBids.length})
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="mt-1 p-2 bg-muted/20 rounded-md max-h-[100px] overflow-y-auto text-[9px]">
+            {includedBids.length > 0 ? (
+              includedBids.map(bid => (
+                <div key={bid.id} className="flex justify-between py-0.5 border-b border-muted/30 last:border-0">
+                  <span className="font-medium truncate max-w-[200px]">{bid.name}</span>
+                  <span className="text-muted-foreground ml-2">
+                    ANM: {bid.animationDays.toFixed(1)} | CG: {bid.cgDays.toFixed(1)} | COMP: {bid.compositingDays.toFixed(1)} | FX: {bid.fxDays.toFixed(1)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <span className="text-muted-foreground">No bids found for current selection</span>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }
