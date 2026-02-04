@@ -108,7 +108,12 @@ export function ResourceDataTable({
     
     filteredProjects.forEach(project => {
       const projectIds = getProjectFamily(project.id);
-      const projectEpisodes = episodes.filter(ep => projectIds.includes(ep.projectId));
+      let projectEpisodes = episodes.filter(ep => projectIds.includes(ep.projectId));
+      
+      // Apply episode filter if a specific episode is selected
+      if (filters.episodeId) {
+        projectEpisodes = projectEpisodes.filter(ep => ep.id === filters.episodeId);
+      }
       
       const monthlyData = new Map<string, MonthlyData>();
       
