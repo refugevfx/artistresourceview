@@ -42,6 +42,19 @@ function interpolateCurve(curve: DistributionCurve, position: number): number {
   return curve[4]; // Return last point if at end
 }
 
+// Calculate the trapezoidal integral of a 5-point curve
+// This gives the actual "area under the curve" for proper normalization
+function calculateCurveIntegral(curve: DistributionCurve): number {
+  // Points are at [0, 0.25, 0.5, 0.75, 1.0]
+  // Trapezoidal integration: sum of (y1 + y2) / 2 × width for each segment
+  const segmentWidth = 0.25;
+  let integral = 0;
+  for (let i = 0; i < 4; i++) {
+    integral += (curve[i] + curve[i + 1]) / 2 * segmentWidth;
+  }
+  return integral;
+}
+
 // Calculate daily artist needs for an episode based on curve distribution
 export function calculateEpisodeNeeds(
   episode: NotionEpisode,
@@ -64,6 +77,13 @@ export function calculateEpisodeNeeds(
     
     if (totalWorkingDays <= 0) return dailyNeeds;
     
+    // Pre-calculate curve integrals for normalization
+    // This ensures distributed totals exactly match bid totals
+    const animIntegral = calculateCurveIntegral(curveSettings.Animation);
+    const cgIntegral = calculateCurveIntegral(curveSettings.CG);
+    const compIntegral = calculateCurveIntegral(curveSettings.Compositing);
+    const fxIntegral = calculateCurveIntegral(curveSettings.FX);
+    
     // For each working day, calculate the weighted need based on curve position
     workingDays.forEach((day, index) => {
       const position = index / (totalWorkingDays - 1 || 1); // 0-1 position in timeline
@@ -76,17 +96,17 @@ export function calculateEpisodeNeeds(
       const fxWeight = interpolateCurve(curveSettings.FX, position);
       
       // Man-days / totalWorkingDays gives average daily need per working day
-      // Multiply by curve weight * 5 (since curve sums to 1, but represents 5 segments)
+      // Normalize by actual curve integral instead of magic number × 5
       const avgAnimDaily = episode.animationDays / totalWorkingDays;
       const avgCgDaily = episode.cgDays / totalWorkingDays;
       const avgCompDaily = episode.compositingDays / totalWorkingDays;
       const avgFxDaily = episode.fxDays / totalWorkingDays;
       
       dailyNeeds.set(dateKey, {
-        animation: avgAnimDaily * animWeight * 5,
-        cg: avgCgDaily * cgWeight * 5,
-        compositing: avgCompDaily * compWeight * 5,
-        fx: avgFxDaily * fxWeight * 5,
+        animation: avgAnimDaily * animWeight / animIntegral,
+        cg: avgCgDaily * cgWeight / cgIntegral,
+        compositing: avgCompDaily * compWeight / compIntegral,
+        fx: avgFxDaily * fxWeight / fxIntegral,
       });
     });
   } catch (e) {
