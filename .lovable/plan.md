@@ -1,87 +1,48 @@
 
 
-# Checker Page for Resource Calculation Debugging
+## Fix Episode Filtering in Resource Data Table
 
-## Overview
+### Problem
+When selecting a specific episode in the filter dropdown, the data table numbers don't change. Only project filtering works - episode filtering is completely ignored.
 
-Create a new `/checker` route that duplicates the Resource Curves dashboard and adds a debugging section below showing aggregated totals per department. This will help validate the calculation logic by displaying raw data pulled from Notion.
+### Root Cause
+In `ResourceDataTable.tsx` at line 111, the episode filter value (`filters.episodeId`) is never applied when filtering episodes for calculation:
 
-## What Gets Created
-
-### 1. New Page: `src/pages/Checker.tsx`
-- Uses the same `useNotionResourceData` hook as the home page
-- Renders the full ResourceDashboard at the top (same as home page)
-- Adds a new "Calculation Checker" section below with aggregated totals
-
-### 2. New Component: `src/components/checker/CalculationChecker.tsx`
-A debugging panel that displays:
-- **Raw Episode Data** for the filtered selection:
-  - Episode name/code
-  - Start date → End date
-  - Total working days calculated
-  - Man-days per department (Animation, CG, Comp, FX)
-- **Aggregated Totals** section showing:
-  - Sum of Animation man-days
-  - Sum of CG man-days
-  - Sum of Compositing man-days
-  - Sum of FX man-days
-- Updates dynamically as filters change (project, episode, status)
-
-### 3. Route Registration in `App.tsx`
-- Add `/checker` as a protected route
-- Uses same auth protection as the home page
-
-## Technical Approach
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  /checker                                                   │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  ResourceDashboard (identical to home page)          │   │
-│  │  - Chart, filters, bookings, data table              │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  CalculationChecker (NEW)                            │   │
-│  │  ┌─────────────────────────────────────────────────┐ │   │
-│  │  │  Aggregated Totals Card                         │ │   │
-│  │  │  Animation: 245 days | CG: 180 days             │ │   │
-│  │  │  Comp: 312 days     | FX: 95 days               │ │   │
-│  │  └─────────────────────────────────────────────────┘ │   │
-│  │  ┌─────────────────────────────────────────────────┐ │   │
-│  │  │  Episode Breakdown Table                        │ │   │
-│  │  │  Episode | Start | End | Days | ANM | CG | ...  │ │   │
-│  │  │  MRCL_201| 2026..| ... | 65   | 120 | 80 | ...  │ │   │
-│  │  └─────────────────────────────────────────────────┘ │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+```typescript
+// Current code - only filters by project, ignores episode filter
+const projectEpisodes = episodes.filter(ep => projectIds.includes(ep.projectId));
 ```
 
-## Data Flow
+### Solution
+Add episode filtering logic when `filters.episodeId` is set:
 
-The CalculationChecker will receive:
-- `episodes` - Raw episode data with man-days from Notion
-- `filters` - Current filter state (projectId, episodeId, statuses)
-- `curveSettings` - Current distribution curve settings
+```typescript
+let projectEpisodes = episodes.filter(ep => projectIds.includes(ep.projectId));
 
-It will calculate and display:
-1. **Filtered episodes** based on current project/episode selection
-2. **Working day count** for each episode (using same logic as resourceCalculations.ts)
-3. **Aggregated totals** summing man-days across all filtered episodes
+// Apply episode filter if a specific episode is selected
+if (filters.episodeId) {
+  projectEpisodes = projectEpisodes.filter(ep => ep.id === filters.episodeId);
+}
+```
 
-## Files to Create/Modify
+### File Changes
 
-| File | Action | Description |
-|------|--------|-------------|
-| `src/pages/Checker.tsx` | Create | New page with dashboard + checker |
-| `src/components/checker/CalculationChecker.tsx` | Create | Debugging panel component |
-| `src/App.tsx` | Modify | Add `/checker` route |
+**File: `src/components/resource/ResourceDataTable.tsx`**
+- Modify line 111 to add episode ID filtering
+- When `filters.episodeId` is set (not null), filter the episodes array to only include the selected episode
+- This ensures the monthly calculations only use data from the selected episode
 
-## What Stays Unchanged
+### Technical Details
 
-- `src/pages/Index.tsx` - No changes
-- `src/components/resource/ResourceDashboard.tsx` - No changes  
-- `src/lib/resourceCalculations.ts` - No changes to formulas
-- `src/hooks/useNotionResourceData.ts` - No changes
+The fix involves:
+1. Converting `const` to `let` for the `projectEpisodes` variable
+2. Adding a conditional filter that checks if `filters.episodeId` is truthy
+3. If set, further filter the episodes array to only include episodes where `ep.id === filters.episodeId`
+
+### Testing
+After implementation:
+1. Select "Bad Monkey S2" project
+2. Select "All Episodes" - should show aggregated data for all episodes
+3. Select a specific episode (e.g., MRCL_201) - numbers should change to show only that episode's data
+4. Select a different episode - numbers should update accordingly
 
