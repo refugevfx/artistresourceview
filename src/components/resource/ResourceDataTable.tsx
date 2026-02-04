@@ -42,6 +42,7 @@ interface ProjectMonthlyData {
   projectId: string;
   projectName: string;
   months: Map<string, MonthlyData>;
+  rawBidTotals: MonthlyData;
 }
 
 const DEPARTMENTS: { key: keyof MonthlyData; label: string; color: string }[] = [
@@ -122,6 +123,15 @@ export function ResourceDataTable({
         projectEpisodes = projectEpisodes.filter(ep => ep.id === filters.episodeId);
       }
       
+      // Calculate raw bid totals for this project
+      const rawBidTotals: MonthlyData = { animation: 0, cg: 0, compositing: 0, fx: 0 };
+      projectEpisodes.forEach(ep => {
+        rawBidTotals.animation += ep.animationDays;
+        rawBidTotals.cg += ep.cgDays;
+        rawBidTotals.compositing += ep.compositingDays;
+        rawBidTotals.fx += ep.fxDays;
+      });
+      
       const monthlyData = new Map<string, MonthlyData>();
       
       // Initialize all months with zeros
@@ -184,11 +194,12 @@ export function ResourceDataTable({
         projectId: project.id,
         projectName: project.name,
         months: monthlyData,
+        rawBidTotals,
       });
     });
     
     return result;
-  }, [filteredProjects, episodes, projects, months, curveSettings, displayMode, aggregationMode]);
+  }, [filteredProjects, episodes, projects, months, curveSettings, displayMode, aggregationMode, filters.episodeId]);
 
   // Calculate totals per month (sum across all projects, cumulative already applied per-project)
   const totals = useMemo(() => {
@@ -285,6 +296,18 @@ export function ResourceDataTable({
     return totalMap;
   }, [projectData, months, aggregationMode, filteredProjects, projects, episodes, filters.episodeId, curveSettings, displayMode]);
 
+  // Calculate overall raw bid totals (sum across all filtered projects)
+  const rawBidTotals = useMemo(() => {
+    const totals: MonthlyData = { animation: 0, cg: 0, compositing: 0, fx: 0 };
+    projectData.forEach(pd => {
+      totals.animation += pd.rawBidTotals.animation;
+      totals.cg += pd.rawBidTotals.cg;
+      totals.compositing += pd.rawBidTotals.compositing;
+      totals.fx += pd.rawBidTotals.fx;
+    });
+    return totals;
+  }, [projectData]);
+
   const formatValue = (val: number) => {
     if (val === 0) return '-';
     return displayMode === 'bidDays' ? val.toFixed(0) : val.toFixed(1);
@@ -332,77 +355,88 @@ export function ResourceDataTable({
                   ({displayMode === 'avgArtists' ? 'avg' : 'days'}{aggregationMode === 'cumulative' ? ', cum' : ''})
                 </span>
               </TableHead>
-            {months.map(m => (
-              <TableHead key={m.key} className="text-center min-w-[45px] py-1 text-[9px]">
-                {m.label}
+              <TableHead className="text-center min-w-[45px] py-1 text-[9px] bg-muted/30 font-semibold">
+                Bid
               </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {/* Totals Section */}
-          <TableRow className="bg-muted/50 font-semibold h-5">
-            <TableCell className="sticky left-0 z-10 bg-muted/50 py-0.5">TOTALS</TableCell>
-            {months.map(m => (
-              <TableCell key={m.key} className="text-center text-muted-foreground py-0.5">
-                —
-              </TableCell>
-            ))}
-          </TableRow>
-          {DEPARTMENTS.map(dept => (
-            <TableRow key={`total-${dept.key}`} className="bg-muted/30 h-5">
-              <TableCell className={`sticky left-0 z-10 bg-muted/30 pl-4 py-0.5 ${dept.color}`}>
-                {dept.label}
-              </TableCell>
-              {months.map(m => {
-                const val = totals.get(m.key)?.[dept.key] || 0;
-                return (
-                  <TableCell key={m.key} className={`text-center font-medium py-0.5 ${dept.color}`}>
-                    {formatValue(val)}
-                  </TableCell>
-                );
-              })}
-            </TableRow>
-          ))}
-          
-          {/* Project Rows */}
-          {projectData.map(pd => (
-            <>
-              <TableRow key={pd.projectId} className="border-t h-5">
-                <TableCell className="sticky left-0 z-10 bg-background font-medium py-0.5 truncate max-w-[120px]">
-                  {pd.projectName}
-                </TableCell>
-                {months.map(m => (
-                  <TableCell key={m.key} className="text-center text-muted-foreground py-0.5">
-                    —
-                  </TableCell>
-                ))}
-              </TableRow>
-              {DEPARTMENTS.map(dept => (
-                <TableRow key={`${pd.projectId}-${dept.key}`} className="h-5">
-                  <TableCell className={`sticky left-0 z-10 bg-background pl-4 py-0.5 ${dept.color}`}>
-                    {dept.label}
-                  </TableCell>
-                  {months.map(m => {
-                    const val = pd.months.get(m.key)?.[dept.key] || 0;
-                    return (
-                      <TableCell key={m.key} className="text-center py-0.5">
-                        {formatValue(val)}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
+              {months.map(m => (
+                <TableHead key={m.key} className="text-center min-w-[45px] py-1 text-[9px]">
+                  {m.label}
+                </TableHead>
               ))}
-            </>
-          ))}
-          
-          {projectData.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={months.length + 1} className="text-center text-muted-foreground py-4">
-                No projects match the current filters
-              </TableCell>
             </TableRow>
-          )}
+        </TableHeader>
+          <TableBody>
+            {/* Totals Section */}
+            <TableRow className="bg-muted/50 font-semibold h-5">
+              <TableCell className="sticky left-0 z-10 bg-muted/50 py-0.5">TOTALS</TableCell>
+              <TableCell className="text-center text-muted-foreground py-0.5 bg-muted/30">—</TableCell>
+              {months.map(m => (
+                <TableCell key={m.key} className="text-center text-muted-foreground py-0.5">
+                  —
+                </TableCell>
+              ))}
+            </TableRow>
+            {DEPARTMENTS.map(dept => (
+              <TableRow key={`total-${dept.key}`} className="bg-muted/30 h-5">
+                <TableCell className={`sticky left-0 z-10 bg-muted/30 pl-4 py-0.5 ${dept.color}`}>
+                  {dept.label}
+                </TableCell>
+                <TableCell className={`text-center font-semibold py-0.5 bg-muted/30 ${dept.color}`}>
+                  {rawBidTotals[dept.key].toFixed(1)}
+                </TableCell>
+                {months.map(m => {
+                  const val = totals.get(m.key)?.[dept.key] || 0;
+                  return (
+                    <TableCell key={m.key} className={`text-center font-medium py-0.5 ${dept.color}`}>
+                      {formatValue(val)}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          
+            {/* Project Rows */}
+            {projectData.map(pd => (
+              <>
+                <TableRow key={pd.projectId} className="border-t h-5">
+                  <TableCell className="sticky left-0 z-10 bg-background font-medium py-0.5 truncate max-w-[120px]">
+                    {pd.projectName}
+                  </TableCell>
+                  <TableCell className="text-center text-muted-foreground py-0.5 bg-muted/10">—</TableCell>
+                  {months.map(m => (
+                    <TableCell key={m.key} className="text-center text-muted-foreground py-0.5">
+                      —
+                    </TableCell>
+                  ))}
+                </TableRow>
+                {DEPARTMENTS.map(dept => (
+                  <TableRow key={`${pd.projectId}-${dept.key}`} className="h-5">
+                    <TableCell className={`sticky left-0 z-10 bg-background pl-4 py-0.5 ${dept.color}`}>
+                      {dept.label}
+                    </TableCell>
+                    <TableCell className={`text-center font-medium py-0.5 bg-muted/10 ${dept.color}`}>
+                      {pd.rawBidTotals[dept.key].toFixed(1)}
+                    </TableCell>
+                    {months.map(m => {
+                      const val = pd.months.get(m.key)?.[dept.key] || 0;
+                      return (
+                        <TableCell key={m.key} className="text-center py-0.5">
+                          {formatValue(val)}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </>
+            ))}
+          
+            {projectData.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={months.length + 2} className="text-center text-muted-foreground py-4">
+                  No projects match the current filters
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
         <ScrollBar orientation="horizontal" />
