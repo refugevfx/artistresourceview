@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { format, addMonths, startOfMonth, endOfMonth, differenceInMonths, eachDayOfInterval, isWeekend } from 'date-fns';
 import {
   Table,
@@ -9,6 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   NotionProject,
   NotionEpisode,
@@ -18,6 +19,9 @@ import {
   Department,
 } from '@/types/resource';
 import { calculateEpisodeNeeds, getTimelineBounds } from '@/lib/resourceCalculations';
+
+type DisplayMode = 'avgArtists' | 'bidDays';
+type AggregationMode = 'monthly' | 'cumulative';
 
 interface ResourceDataTableProps {
   projects: NotionProject[];
@@ -54,6 +58,9 @@ export function ResourceDataTable({
   curveSettings,
   zoom,
 }: ResourceDataTableProps) {
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('avgArtists');
+  const [aggregationMode, setAggregationMode] = useState<AggregationMode>('monthly');
+
   // Calculate month columns based on zoom level
   const months = useMemo(() => {
     const { start, end } = getTimelineBounds(zoom);
@@ -139,22 +146,39 @@ export function ResourceDataTable({
         });
       });
       
-      // Convert daily totals to average daily artists per month
-      // Count actual working days that had data for each month
-      monthlyData.forEach((data, key) => {
-        // Parse the month key to get actual working days in that month
-        const [year, month] = key.split('-').map(Number);
-        const monthStart = new Date(year, month - 1, 1);
-        const monthEnd = endOfMonth(monthStart);
-        const allDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
-        const workingDaysCount = allDays.filter(day => !isWeekend(day)).length;
-        
-        // Average = total daily values / working days in month
-        data.animation = workingDaysCount > 0 ? data.animation / workingDaysCount : 0;
-        data.cg = workingDaysCount > 0 ? data.cg / workingDaysCount : 0;
-        data.compositing = workingDaysCount > 0 ? data.compositing / workingDaysCount : 0;
-        data.fx = workingDaysCount > 0 ? data.fx / workingDaysCount : 0;
-      });
+      // For avgArtists mode: convert daily totals to average daily artists per month
+      if (displayMode === 'avgArtists') {
+        monthlyData.forEach((data, key) => {
+          const [year, month] = key.split('-').map(Number);
+          const monthStart = new Date(year, month - 1, 1);
+          const monthEnd = endOfMonth(monthStart);
+          const allDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+          const workingDaysCount = allDays.filter(day => !isWeekend(day)).length;
+          
+          data.animation = workingDaysCount > 0 ? data.animation / workingDaysCount : 0;
+          data.cg = workingDaysCount > 0 ? data.cg / workingDaysCount : 0;
+          data.compositing = workingDaysCount > 0 ? data.compositing / workingDaysCount : 0;
+          data.fx = workingDaysCount > 0 ? data.fx / workingDaysCount : 0;
+        });
+      }
+      
+      // For cumulative mode: calculate running totals
+      if (aggregationMode === 'cumulative') {
+        let cumAnimation = 0, cumCg = 0, cumComp = 0, cumFx = 0;
+        months.forEach(m => {
+          const data = monthlyData.get(m.key);
+          if (data) {
+            cumAnimation += data.animation;
+            cumCg += data.cg;
+            cumComp += data.compositing;
+            cumFx += data.fx;
+            data.animation = cumAnimation;
+            data.cg = cumCg;
+            data.compositing = cumComp;
+            data.fx = cumFx;
+          }
+        });
+      }
       
       result.push({
         projectId: project.id,
@@ -164,9 +188,9 @@ export function ResourceDataTable({
     });
     
     return result;
-  }, [filteredProjects, episodes, projects, months, curveSettings]);
+  }, [filteredProjects, episodes, projects, months, curveSettings, displayMode, aggregationMode]);
 
-  // Calculate totals per month
+  // Calculate totals per month (sum across all projects, cumulative already applied per-project)
   const totals = useMemo(() => {
     const totalMap = new Map<string, MonthlyData>();
     
@@ -186,22 +210,128 @@ export function ResourceDataTable({
       });
     });
     
+    // For cumulative totals when we have multiple projects, recalculate cumulative on the summed values
+    if (aggregationMode === 'cumulative' && projectData.length > 1) {
+      // The per-project cumulative values were already summed, which isn't correct for total cumulative
+      // We need to recalculate: sum all monthly values first, then make cumulative
+      const rawTotalMap = new Map<string, MonthlyData>();
+      months.forEach(m => {
+        rawTotalMap.set(m.key, { animation: 0, cg: 0, compositing: 0, fx: 0 });
+      });
+      
+      // Get raw (non-cumulative) values by reversing the cumulative calculation per project
+      // Actually, let's just recalculate from scratch for totals
+      filteredProjects.forEach(project => {
+        const projectIds = [project.id];
+        projects.forEach(p => {
+          if (p.parentId === project.id) projectIds.push(p.id);
+        });
+        
+        let projectEpisodes = episodes.filter(ep => projectIds.includes(ep.projectId));
+        if (filters.episodeId) {
+          projectEpisodes = projectEpisodes.filter(ep => ep.id === filters.episodeId);
+        }
+        
+        projectEpisodes.forEach(episode => {
+          const dailyNeeds = calculateEpisodeNeeds(episode, curveSettings);
+          dailyNeeds.forEach((dayData, dateStr) => {
+            const monthKey = dateStr.substring(0, 7);
+            const monthData = rawTotalMap.get(monthKey);
+            if (monthData) {
+              monthData.animation += dayData.animation;
+              monthData.cg += dayData.cg;
+              monthData.compositing += dayData.compositing;
+              monthData.fx += dayData.fx;
+            }
+          });
+        });
+      });
+      
+      // Apply averaging if needed
+      if (displayMode === 'avgArtists') {
+        rawTotalMap.forEach((data, key) => {
+          const [year, month] = key.split('-').map(Number);
+          const monthStart = new Date(year, month - 1, 1);
+          const monthEnd = endOfMonth(monthStart);
+          const allDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+          const workingDaysCount = allDays.filter(day => !isWeekend(day)).length;
+          
+          data.animation = workingDaysCount > 0 ? data.animation / workingDaysCount : 0;
+          data.cg = workingDaysCount > 0 ? data.cg / workingDaysCount : 0;
+          data.compositing = workingDaysCount > 0 ? data.compositing / workingDaysCount : 0;
+          data.fx = workingDaysCount > 0 ? data.fx / workingDaysCount : 0;
+        });
+      }
+      
+      // Apply cumulative
+      let cumAnimation = 0, cumCg = 0, cumComp = 0, cumFx = 0;
+      months.forEach(m => {
+        const data = rawTotalMap.get(m.key);
+        if (data) {
+          cumAnimation += data.animation;
+          cumCg += data.cg;
+          cumComp += data.compositing;
+          cumFx += data.fx;
+          totalMap.set(m.key, {
+            animation: cumAnimation,
+            cg: cumCg,
+            compositing: cumComp,
+            fx: cumFx,
+          });
+        }
+      });
+    }
+    
     return totalMap;
-  }, [projectData, months]);
+  }, [projectData, months, aggregationMode, filteredProjects, projects, episodes, filters.episodeId, curveSettings, displayMode]);
 
   const formatValue = (val: number) => {
     if (val === 0) return '-';
-    return val.toFixed(1);
+    return displayMode === 'bidDays' ? val.toFixed(0) : val.toFixed(1);
   };
 
   return (
-    <ScrollArea className="w-full h-[310px] whitespace-nowrap rounded-md border">
-      <Table className="text-[9px]">
-        <TableHeader>
-          <TableRow className="h-6">
-            <TableHead className="sticky left-0 z-10 bg-background min-w-[120px] py-1 text-[9px]">
-              Project / Dept
-            </TableHead>
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-3 px-1">
+        <ToggleGroup 
+          type="single" 
+          value={displayMode} 
+          onValueChange={(v) => v && setDisplayMode(v as DisplayMode)}
+          size="sm"
+        >
+          <ToggleGroupItem value="avgArtists" className="h-6 px-2 text-[10px]">
+            Avg Artists
+          </ToggleGroupItem>
+          <ToggleGroupItem value="bidDays" className="h-6 px-2 text-[10px]">
+            Bid Days
+          </ToggleGroupItem>
+        </ToggleGroup>
+
+        <ToggleGroup 
+          type="single" 
+          value={aggregationMode} 
+          onValueChange={(v) => v && setAggregationMode(v as AggregationMode)}
+          size="sm"
+        >
+          <ToggleGroupItem value="monthly" className="h-6 px-2 text-[10px]">
+            Monthly
+          </ToggleGroupItem>
+          <ToggleGroupItem value="cumulative" className="h-6 px-2 text-[10px]">
+            Cumulative
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+
+      <ScrollArea className="w-full h-[280px] whitespace-nowrap rounded-md border">
+        <Table className="text-[9px]">
+          <TableHeader>
+            <TableRow className="h-6">
+              <TableHead className="sticky left-0 z-10 bg-background min-w-[120px] py-1 text-[9px]">
+                Project / Dept
+                <span className="text-muted-foreground ml-1">
+                  ({displayMode === 'avgArtists' ? 'avg' : 'days'}{aggregationMode === 'cumulative' ? ', cum' : ''})
+                </span>
+              </TableHead>
             {months.map(m => (
               <TableHead key={m.key} className="text-center min-w-[45px] py-1 text-[9px]">
                 {m.label}
@@ -273,10 +403,11 @@ export function ResourceDataTable({
               </TableCell>
             </TableRow>
           )}
-        </TableBody>
-      </Table>
-      <ScrollBar orientation="horizontal" />
-      <ScrollBar orientation="vertical" />
-    </ScrollArea>
+          </TableBody>
+        </Table>
+        <ScrollBar orientation="horizontal" />
+        <ScrollBar orientation="vertical" />
+      </ScrollArea>
+    </div>
   );
 }
