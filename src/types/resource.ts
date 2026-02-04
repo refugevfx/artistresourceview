@@ -37,6 +37,16 @@ export const CURVE_PRESETS = {
   rampUp: [0.05, 0.15, 0.25, 0.25, 0.3] as DistributionCurve,
 };
 
+// Reference to a source bid for QC tracking
+export interface BidReference {
+  id: string;
+  name: string;
+  animationDays: number;
+  cgDays: number;
+  compositingDays: number;
+  fxDays: number;
+}
+
 export interface NotionProject {
   id: string;
   name: string;
@@ -59,6 +69,8 @@ export interface NotionEpisode {
   cgDays: number;
   compositingDays: number;
   fxDays: number;
+  // Track which bids contributed to these totals
+  sourceBids?: BidReference[];
 }
 
 export interface NotionBooking {
